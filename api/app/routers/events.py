@@ -11,7 +11,7 @@ community events (stored locally, clearly separated from official 42 events).
 
 from __future__ import annotations
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Response, status
 from fastapi.exceptions import HTTPException
 
 from ..deps import CurrentUser, EventsProviderDep, SessionDep, SettingsDep
@@ -36,9 +36,15 @@ async def _upcoming_or_503(provider: EventsProviderDep) -> list[EventOut]:
 
 @router.get("", response_model=list[EventOut])
 async def list_events(
-    provider: EventsProviderDep, session: SessionDep, user: CurrentUser
+    provider: EventsProviderDep,
+    session: SessionDep,
+    user: CurrentUser,
+    settings: SettingsDep,
+    response: Response,
 ) -> list[EventOut]:
     """Upcoming campus events, annotated with this student's RSVP state."""
+    # Per-viewer data (RSVP flags) → short private cache for perf, never shared.
+    response.headers["Cache-Control"] = f"private, max-age={settings.http_cache_seconds}"
     base = await _upcoming_or_503(provider)
     ids = [e.id for e in base]
     # Reconcile our local mirror with 42's real sign-ups (so a cancellation made

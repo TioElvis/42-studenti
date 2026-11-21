@@ -16,7 +16,7 @@ export function Brand() {
       </div>
       <div>
         <div className="font-mono text-sm font-bold tracking-wide">
-          {hacker ? "ROMA_STUDENTI.EXE" : "ROMA STUDENTI"}
+          {hacker ? "STUDENTI.EXE" : "STUDENTI"}
         </div>
         <div className="font-mono text-xs text-[var(--text-muted)]">
           {hacker ? "SPQR // HACKER_ROMAN_PALETTE" : t("brand.subtitle")}

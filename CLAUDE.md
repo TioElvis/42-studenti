@@ -1,4 +1,4 @@
-# 42-Roma-Studenti — Project Rules
+# 42-Studenti — Project Rules
 
 Web app for the **42 Roma** student community. UI is **100% Italian with Roman
 slang (romanesco)**. Monorepo: a FastAPI backend (`api/`) and a Next.js
@@ -11,7 +11,7 @@ frontend (`web/`), plus design references in `assets/`.
 ## Layout
 
 ```
-42-roma-studenti/
+42-studenti/
   api/            FastAPI + SQLAlchemy(async) + Alembic + the vendored 42 client
     vendor/42api/ Local editable clone of github.com/Shadowaker/42api (intra42)
     app/          routers → services → models (+ schemas, intra adapter)

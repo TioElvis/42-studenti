@@ -16,6 +16,7 @@ const AUTH_ERROR_KEYS: Record<string, string> = {
   oauth: "login.errOauth",
   denied: "login.errDenied",
   config: "login.errConfig",
+  campus: "login.errCampus",
 };
 
 /** The strict login gate: the only thing an anonymous visitor can see. */
@@ -66,7 +67,7 @@ export function LoginGate() {
           <div className="flex flex-col gap-4 p-6 text-center">
             <div>
               <h1 className="font-display text-2xl font-bold">
-                42 Roma Studenti<span className="cursor-blink">_</span>
+                42 Studenti<span className="cursor-blink">_</span>
               </h1>
               <p className="mt-2 font-mono text-sm text-[var(--text-muted)]">{t("login.subtitle")}</p>
             </div>

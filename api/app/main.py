@@ -20,7 +20,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import __version__
 from .config import Settings, get_settings
-from .routers import auth, comments, events, me, posts, ws
+from .routers import auth, comments, content, events, me, posts, ws
 from .services.exceptions import ConflictError, ForbiddenError, NotFoundError
 
 logger = logging.getLogger("app")
@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
-        title="42 Roma Studenti API",
+        title="42 Studenti API",
         version=__version__,
         lifespan=lifespan,
         docs_url="/docs" if not settings.is_production else None,
@@ -107,11 +107,12 @@ def create_app() -> FastAPI:
     app.include_router(posts.router)
     app.include_router(comments.router)
     app.include_router(events.router)
+    app.include_router(content.router)
     app.include_router(ws.router)
 
     @app.get("/health", tags=["meta"])
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "42-roma-studenti-api", "version": __version__}
+        return {"status": "ok", "service": "42-studenti-api", "version": __version__}
 
     return app
 

@@ -56,6 +56,33 @@ async def test_full_login_flow_sets_cookie_and_creates_user(engine):
         assert body["avatar_url"].endswith("rspqr.jpg")
 
 
+async def test_callback_rejects_other_campus(engine):
+    """A student from another campus is refused (portal is 42 Roma only)."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
+        start = await c.get("/auth/42", follow_redirects=False)
+        state = parse_qs(urlsplit(start.headers["location"]).query)["state"][0]
+
+        other_campus = {**ME_PAYLOAD, "campus": [{"id": 1, "name": "Paris"}],
+                        "campus_users": [{"campus_id": 1, "is_primary": True}]}
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post("https://api.intra.42.fr/oauth/token").mock(
+                return_value=Response(200, json={"access_token": "intra-token-xyz"})
+            )
+            mock.get("https://api.intra.42.fr/v2/me").mock(
+                return_value=Response(200, json=other_campus)
+            )
+            cb = await c.get(
+                "/auth/42/callback",
+                params={"code": "auth-code-123", "state": state},
+                follow_redirects=False,
+            )
+        assert cb.status_code == 302
+        assert "auth_error=campus" in cb.headers["location"]
+        assert not c.cookies.get("access_token")
+
+
 async def test_callback_rejects_bad_state(engine):
     app = create_app()
     transport = ASGITransport(app=app)

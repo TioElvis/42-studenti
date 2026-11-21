@@ -41,4 +41,16 @@ def auth_rate_limiter(request: Request) -> None:
     _AUTH_LIMITER.check(request)
 
 
+def message_rate_limiter(request: Request) -> None:
+    """Dependency for user-generated messaging (e.g. a future "contact staff"
+    endpoint): a stricter 5 requests / minute / IP to curb spam/abuse.
+
+    NB: 42's API has no email-sending capability, so actually delivering a
+    staff message needs a separate email provider (SMTP/SendGrid/SES); wire
+    this limiter onto that endpoint when it's built.
+    """
+    _MESSAGE_LIMITER.check(request)
+
+
 _AUTH_LIMITER = FixedWindowRateLimiter(max_requests=20, window_seconds=60.0)
+_MESSAGE_LIMITER = FixedWindowRateLimiter(max_requests=5, window_seconds=60.0)

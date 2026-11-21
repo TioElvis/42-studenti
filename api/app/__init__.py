@@ -1,4 +1,4 @@
-"""42-Roma-Studenti API — FastAPI backend for the 42 Roma student community.
+"""42-Studenti API — FastAPI backend for the 42 Roma student community.
 
 Layering (dependencies point inward only):
 

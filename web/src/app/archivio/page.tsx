@@ -1,6 +1,13 @@
-import { ArchivioComingSoon } from "@/components/archivio/coming-soon";
+import { ContentBrowser } from "@/components/content/content-browser";
 
-/** Archivio — campus materials repository (event recaps, announcements, slides). Stub for now. */
+/** Archivio — campus materials served from assets/archive/. */
 export default function ArchivioPage() {
-  return <ArchivioComingSoon />;
+  return (
+    <ContentBrowser
+      section="archive"
+      labelKey="archivio.label"
+      descKey="archivio.desc"
+      bar="ARCHIVIO.DIR"
+    />
+  );
 }
