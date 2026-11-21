@@ -1,7 +1,13 @@
-import { MaterialeComingSoon } from "@/components/materiale/coming-soon";
+import { ContentBrowser } from "@/components/content/content-browser";
 
-/** Materiale didattico — student-contributed repo/project links & resources.
- * Split out from Archivio; placeholder ("in costruzione") for now. */
+/** Materiale didattico — student repo/project files served from assets/material/. */
 export default function MaterialePage() {
-  return <MaterialeComingSoon />;
+  return (
+    <ContentBrowser
+      section="material"
+      labelKey="materiale.label"
+      descKey="materiale.desc"
+      bar="MATERIALE.REPO"
+    />
+  );
 }

@@ -94,6 +94,13 @@ async def callback(
         logger.warning("42 OAuth callback failed during token/profile exchange")
         return _redirect_with_error(settings, "oauth")
 
+    # Access is restricted to students of our campus (42 Roma). Deny by default:
+    # if the campus can't be confirmed from /me, the login is refused.
+    if settings.forty_two_campus_id not in profile.campus_ids:
+        logger.info("Login refused: user %s is not on campus %s", profile.login,
+                    settings.forty_two_campus_id)
+        return _redirect_with_error(settings, "campus")
+
     user = await users_service.upsert_from_intra(session, profile)
     # Keep the 42 user token (encrypted) so we can act on 42 on their behalf.
     intra_user.apply_tokens(user, bundle)
@@ -170,7 +177,20 @@ def _parse_me(data: dict) -> IntraProfile:
         display_name=data.get("displayname") or data.get("usual_full_name"),
         avatar_url=_extract_avatar(data),
         campus=_extract_campus(data),
+        campus_ids=_extract_campus_ids(data),
     )
+
+
+def _extract_campus_ids(data: dict) -> frozenset[int]:
+    """All campus ids the user belongs to (from ``campus`` and ``campus_users``)."""
+    ids: set[int] = set()
+    for c in data.get("campus", []) or []:
+        if isinstance(c, dict) and isinstance(c.get("id"), int):
+            ids.add(c["id"])
+    for cu in data.get("campus_users", []) or []:
+        if isinstance(cu, dict) and isinstance(cu.get("campus_id"), int):
+            ids.add(cu["campus_id"])
+    return frozenset(ids)
 
 
 def _extract_avatar(data: dict) -> str | None:

@@ -8,8 +8,13 @@ the rest of the code depends on a typed ``Settings`` object rather than on
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+# Repo-root ``assets/`` dir (…/42-studenti/assets): holds the file-based
+# Materiale / Archivio content served by the content router.
+_DEFAULT_ASSETS_DIR = str(Path(__file__).resolve().parents[2] / "assets")
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -63,6 +68,11 @@ class Settings(BaseSettings):
 
     # --- Events cache TTL (seconds) to stay well under 42 API rate limits ---
     events_cache_ttl: int = Field(default=300, alias="EVENTS_CACHE_TTL")
+
+    # --- File-based content (Materiale / Archivio) served from assets/ ---
+    assets_dir: str = Field(default=_DEFAULT_ASSETS_DIR, alias="ASSETS_DIR")
+    # Client/proxy cache lifetime (seconds) for cacheable GET responses.
+    http_cache_seconds: int = Field(default=60, alias="HTTP_CACHE_SECONDS")
 
     @field_validator("cookie_samesite")
     @classmethod

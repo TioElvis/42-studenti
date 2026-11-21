@@ -13,7 +13,8 @@ from ..models.user import User
 
 @dataclass(frozen=True)
 class IntraProfile:
-    """The subset of the 42 ``/me`` payload we persist."""
+    """The subset of the 42 ``/me`` payload we persist (plus the campus ids used
+    once at login to gate access — not stored)."""
 
     intra_id: int
     login: str
@@ -21,6 +22,7 @@ class IntraProfile:
     display_name: str | None
     avatar_url: str | None
     campus: str | None
+    campus_ids: frozenset[int] = frozenset()
 
 
 async def upsert_from_intra(session: AsyncSession, profile: IntraProfile) -> User:

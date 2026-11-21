@@ -1,4 +1,4 @@
-# 42-Roma-Studenti API — top-level pinned dependencies (Python 3.11+).
+# 42-Studenti API — top-level pinned dependencies (Python 3.11+).
 # Full transitive lock: requirements.lock. Local 42 client: vendor/42api (editable).
 #
 #   python3 -m venv .venv && source .venv/bin/activate

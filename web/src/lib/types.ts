@@ -111,3 +111,25 @@ export interface InterestState {
   interested: boolean;
   interest_count: number;
 }
+
+/** File-based Materiale / Archivio content (served from assets/). */
+export type ContentSection = "material" | "archive";
+
+export interface ContentEntry {
+  path: string; // e.g. "exam02/help.md"
+  name: string; // e.g. "help.md"
+  folder: string; // parent folder relative to the section root ("" at root)
+  size: number;
+  text: boolean;
+}
+
+export interface ContentList {
+  section: ContentSection;
+  entries: ContentEntry[];
+}
+
+export interface ContentFile {
+  path: string;
+  name: string;
+  content: string;
+}

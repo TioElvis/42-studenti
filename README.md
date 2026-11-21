@@ -1,4 +1,4 @@
-# 42 Roma Studenti
+# 42 Studenti
 
 Il portale della community studentesca di **42 Roma** — *codice, peer learning e
 'na birra dopo er push.* UI in italiano con slang romanesco, due temi 90s

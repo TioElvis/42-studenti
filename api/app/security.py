@@ -26,7 +26,7 @@ def create_access_token(settings: Settings, *, user_id: int, login: str) -> str:
         "login": login,
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(minutes=settings.jwt_expire_minutes)).timestamp()),
-        "iss": "42-roma-studenti",
+        "iss": "42-studenti",
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
@@ -38,7 +38,7 @@ def decode_access_token(settings: Settings, token: str) -> int:
             token,
             settings.jwt_secret,
             algorithms=[settings.jwt_algorithm],
-            issuer="42-roma-studenti",
+            issuer="42-studenti",
             options={"require": ["exp", "sub", "iss"]},
         )
     except JWTError as exc:

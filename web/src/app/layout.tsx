@@ -8,10 +8,10 @@ import { RealtimeProvider } from "@/providers/realtime";
 import { AppFrame } from "@/components/app-frame";
 
 export const metadata: Metadata = {
-  title: "42 Roma Studenti",
+  title: "42 Studenti",
   description:
     "Il portale degli studenti di 42 Roma: La Bacheca, Eventi e Club. Codice, peer learning e 'na birra dopo er push.",
-  applicationName: "42 Roma Studenti",
+  applicationName: "42 Studenti",
   robots: { index: false, follow: false },
 };
 

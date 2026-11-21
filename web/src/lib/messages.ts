@@ -43,7 +43,7 @@ const it = {
     stamp: "SPQR • STUDENTI PROGRAMMANO, QUASI SEMPRE.",
   },
   footer:
-    "42 Roma Studenti — codice, peer learning e 'na birra dopo er push. · Nessun admin, solo community.",
+    "42 Studenti — codice, peer learning e 'na birra dopo er push. · Nessun admin, solo community.",
   settings: {
     trigger: "Impostazioni",
     title: "Impostazioni",
@@ -65,6 +65,7 @@ const it = {
     errOauth: "Aò, 'nte impanicà! Il login co' 42 è annato storto.",
     errDenied: "Hai detto de no a 42. Quando vòi, riprova.",
     errConfig: "Portale non ancora configurato. Torna tra poco.",
+    errCampus: "Sto portale è solo pe' li studenti de 42 Roma. Mi dispiace, regà!",
   },
   bacheca: {
     label: "La bacheca",
@@ -242,6 +243,14 @@ const it = {
     banner:
       "Aò, 'sta sezione sta ancora in cantiere — presto ognuno potrà mette i suoi link e appunti pe' aiutà li compagni.",
   },
+  content: {
+    empty: "Ancora nessun file qui. Aggiungili su GitHub sotto assets/.",
+    pick: "Scegli un file da leggere.",
+    loading: "Carico…",
+    error: "Nun riesco a caricà 'sto file.",
+    listError: "Nun riesco a caricà la lista dei file.",
+    root: "(radice)",
+  },
   notFound: {
     bar: "ERRORE_404.EXE",
     barSub: "errore di sistema",
@@ -306,7 +315,7 @@ const en: typeof it = {
     stamp: "SPQR • STUDENTS PROGRAM, QUASI SEMPER.",
   },
   footer:
-    "42 Roma Studenti — code, peer learning and a beer after the push. · No admins, just community.",
+    "42 Studenti — code, peer learning and a beer after the push. · No admins, just community.",
   settings: {
     trigger: "Settings",
     title: "Settings",
@@ -328,6 +337,7 @@ const en: typeof it = {
     errOauth: "Don't panic! Signing in with 42 went wrong.",
     errDenied: "You declined 42. Try again whenever you like.",
     errConfig: "Portal not configured yet. Check back soon.",
+    errCampus: "This portal is for 42 Roma students only. Sorry!",
   },
   bacheca: {
     label: "The board",
@@ -503,6 +513,14 @@ const en: typeof it = {
     footerLine: "Here you'll be able to add links to repos, docs and notes for each project.",
     banner:
       "This section is still under construction — soon everyone will be able to add their links and notes to help classmates.",
+  },
+  content: {
+    empty: "No files here yet. Add them on GitHub under assets/.",
+    pick: "Pick a file to read.",
+    loading: "Loading…",
+    error: "Couldn't load this file.",
+    listError: "Couldn't load the file list.",
+    root: "(root)",
   },
   notFound: {
     bar: "ERROR_404.EXE",

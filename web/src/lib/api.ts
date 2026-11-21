@@ -10,6 +10,9 @@ import type {
   InterestState,
   LikeState,
   PostCategory,
+  ContentFile,
+  ContentList,
+  ContentSection,
   PostDetail,
   PostPage,
   PostType,
@@ -123,4 +126,8 @@ export const api = {
   listEvents: () => request<EventItem[]>("/events"),
   toggleEventInterest: (eventId: number) =>
     request<InterestState>(`/events/${eventId}/interest`, { method: "POST" }),
+
+  listContent: (section: ContentSection) => request<ContentList>(`/content/${section}`),
+  readContent: (section: ContentSection, path: string) =>
+    request<ContentFile>(`/content/${section}/raw?path=${encodeURIComponent(path)}`),
 };
