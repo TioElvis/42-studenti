@@ -28,3 +28,16 @@ def test_unknown_section_rejected():
 def test_path_traversal_rejected(bad):
     with pytest.raises(NotFoundError):
         content_service.read_file(get_settings(), "material", bad)
+
+
+def test_resolve_file_returns_mime_and_blocks_traversal():
+    path, mime = content_service.resolve_file(get_settings(), "material", "libft/diagram.svg")
+    assert mime == "image/svg+xml" and path.name == "diagram.svg"
+    with pytest.raises(NotFoundError):
+        content_service.resolve_file(get_settings(), "material", "../../../etc/passwd")
+
+
+def test_entry_kind_classification():
+    by_path = {e.path: e for e in content_service.list_entries(get_settings(), "material").entries}
+    assert by_path["exam02/help.md"].kind == "text"
+    assert by_path["libft/diagram.svg"].kind == "image"

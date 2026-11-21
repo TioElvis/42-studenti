@@ -90,7 +90,14 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
-        response.headers.setdefault("X-Frame-Options", "DENY")
+        # The content file endpoint streams assets the web app embeds (inline
+        # PDFs in an <iframe>); it sets its own scoped frame-ancestors CSP, so we
+        # skip the blanket X-Frame-Options: DENY only for it. Everything else
+        # stays un-framable. (setdefault leaves the endpoint's own CSP intact.)
+        path = request.url.path
+        is_content_file = path.startswith("/content/") and path.endswith("/file")
+        if not is_content_file:
+            response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault(
             "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
         )
