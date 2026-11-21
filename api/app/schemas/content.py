@@ -10,7 +10,8 @@ class ContentEntry(BaseModel):
     name: str  # file name, e.g. "help.md"
     folder: str  # parent folder relative to the section root ("" at the root)
     size: int  # bytes
-    text: bool  # whether the file is a readable text document
+    kind: str  # "text" | "image" | "pdf" | "other" — how the UI should render it
+    mime: str  # media type, e.g. "application/pdf"
 
 
 class ContentList(BaseModel):

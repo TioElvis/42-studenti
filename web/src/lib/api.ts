@@ -130,4 +130,9 @@ export const api = {
   listContent: (section: ContentSection) => request<ContentList>(`/content/${section}`),
   readContent: (section: ContentSection, path: string) =>
     request<ContentFile>(`/content/${section}/raw?path=${encodeURIComponent(path)}`),
+  /** Absolute URL to stream a file (any type). ``download`` forces a download;
+   * otherwise images/PDFs are served inline for in-page rendering. */
+  contentFileUrl: (section: ContentSection, path: string, download = false) =>
+    `${API_BASE}/content/${section}/file?path=${encodeURIComponent(path)}` +
+    (download ? "&download=1" : ""),
 };
