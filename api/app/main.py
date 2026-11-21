@@ -44,6 +44,11 @@ def _validate_production_secrets(settings: Settings) -> None:
     if missing:
         raise RuntimeError(f"Missing required settings in production: {', '.join(missing)}")
 
+    # The session cookie must be TLS-only in production, or it can be sent over
+    # plain HTTP and hijacked. (SameSite=None also requires Secure.)
+    if not settings.cookie_secure:
+        raise RuntimeError("COOKIE_SECURE must be true in production")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

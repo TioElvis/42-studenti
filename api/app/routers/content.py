@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import re
+from urllib.parse import quote
+
 from fastapi import APIRouter, Query, Response
 from fastapi.responses import FileResponse
 
@@ -10,6 +13,16 @@ from ..schemas.content import ContentFile, ContentList
 from ..services import content as content_service
 
 router = APIRouter(prefix="/content", tags=["content"])
+
+
+def _content_disposition(disposition: str, filename: str) -> str:
+    """Build a safe Content-Disposition value (no header injection).
+
+    A plain ASCII, quote/control-stripped ``filename`` for old clients plus an
+    RFC 5987 ``filename*`` carrying the real (possibly non-ASCII) name.
+    """
+    ascii_name = re.sub(r'[\\"\r\n]+', "_", filename.encode("ascii", "ignore").decode()) or "file"
+    return f"{disposition}; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(filename)}"
 
 # Media types safe to serve inline (rendered by the browser). Everything else
 # (Office docs, archives, svg, …) is sent as an attachment.
@@ -60,7 +73,9 @@ async def serve_file(
     target, mime = content_service.resolve_file(settings, section, path)
     inline = (not download) and (mime in _INLINE_MIME)
     headers: dict[str, str] = {
-        "Content-Disposition": f'{"inline" if inline else "attachment"}; filename="{target.name}"',
+        "Content-Disposition": _content_disposition(
+            "inline" if inline else "attachment", target.name
+        ),
         "X-Content-Type-Options": "nosniff",
     }
     _cache(headers, settings)
