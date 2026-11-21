@@ -1,3 +1,0 @@
-Esempio di file di testo.
-
-Se lo vedi qui renderizzato, il tipo 'text' funziona.
