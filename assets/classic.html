@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>42 Roma Studenti — Design System & Palette Classica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600;700&family=Space+Mono:wght@700&display=swap"
+      rel="stylesheet" />
+    <style>
+      :root {
+        --bg-travertine: #f6f2e9;
+        --surface-card: #fcfbf7;
+        --surface-muted: #efece4;
+        --text-primary: #23211e;
+        --text-secondary: #6e695f;
+        --brand-primary: #9b2928;
+        --brand-primary-hover: #7d1e1d;
+        --brand-foreground: #fcfbf7;
+        --border-hard: #2b2927;
+        --border-subtle: #d8d1c3;
+        --accent-olive: #dce8d0;
+        --accent-olive-text: #2f4a22;
+        --accent-rose: #f5d6d6;
+        --accent-rose-text: #7a2323;
+        --accent-gold: #f7e6b0;
+        --accent-gold-text: #5c4510;
+        --status-online: #2e8b57;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: var(--bg-travertine);
+        color: var(--text-primary);
+        font-family: "DM Sans", sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      .mono {
+        font-family: "IBM Plex Mono", monospace;
+      }
+
+      .display {
+        font-family: "Space Mono", monospace;
+      }
+
+      .top-ribbon {
+        background-color: var(--brand-primary);
+        color: var(--brand-foreground);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        padding: 6px 24px;
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border-hard);
+      }
+
+      .container {
+        max-width: 1060px;
+        margin: 0 auto;
+        padding: 32px 24px 64px;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .brand-42 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--brand-primary);
+        line-height: 1;
+      }
+
+      .brand-title {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+
+      .brand-sub {
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+
+      .status-pill {
+        background: var(--surface-card);
+        border: 1px solid var(--border-hard);
+        padding: 6px 12px;
+        font-size: 11px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 2px 2px 0 var(--border-hard);
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        background: var(--status-online);
+        border-radius: 50%;
+        animation: pulse 1.8s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.4;
+          transform: scale(0.85);
+        }
+      }
+
+      @keyframes blink {
+        0%,
+        49% {
+          opacity: 1;
+        }
+        50%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      .cursor {
+        animation: blink 1s infinite;
+        color: var(--brand-primary);
+      }
+
+      h2 {
+        font-size: 22px;
+        margin: 0 0 6px 0;
+      }
+
+      .section-desc {
+        color: var(--text-secondary);
+        font-size: 14px;
+        margin: 0 0 24px 0;
+      }
+
+      .palette-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 18px;
+        margin-bottom: 48px;
+      }
+
+      .swatch-card {
+        background: var(--surface-card);
+        border: 1px solid var(--border-hard);
+        box-shadow: 3px 3px 0 var(--border-hard);
+        cursor: pointer;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+
+      .swatch-card:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 5px 5px 0 var(--border-hard);
+      }
+
+      .swatch-bar {
+        background: var(--surface-muted);
+        border-bottom: 1px solid var(--border-hard);
+        padding: 4px 10px;
+        font-size: 10px;
+        color: var(--text-secondary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .window-dots {
+        display: flex;
+        gap: 3px;
+      }
+
+      .window-dots span {
+        width: 6px;
+        height: 6px;
+        border: 1px solid var(--border-hard);
+        display: inline-block;
+      }
+
+      .swatch-color {
+        height: 92px;
+        border-bottom: 1px solid var(--border-hard);
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+        padding: 8px;
+      }
+
+      .copy-tag {
+        background: rgba(252, 251, 247, 0.9);
+        border: 1px solid var(--border-hard);
+        font-size: 10px;
+        padding: 2px 6px;
+        color: var(--text-primary);
+      }
+
+      .swatch-body {
+        padding: 12px;
+      }
+
+      .swatch-name {
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 2px;
+      }
+
+      .swatch-hex {
+        font-size: 12px;
+        color: var(--brand-primary);
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      .swatch-role {
+        font-size: 12px;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      .preview-window {
+        background: var(--surface-card);
+        border: 1px solid var(--border-hard);
+        box-shadow: 4px 4px 0 var(--border-hard);
+      }
+
+      .preview-bar {
+        background: var(--surface-muted);
+        border-bottom: 1px solid var(--border-hard);
+        padding: 8px 14px;
+        font-size: 11px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .preview-content {
+        padding: 24px;
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 24px;
+      }
+
+      @media (max-width: 768px) {
+        .preview-content {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .post-card {
+        background: var(--surface-card);
+        border: 1px solid var(--border-hard);
+        padding: 16px;
+      }
+
+      .post-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .avatar {
+        width: 34px;
+        height: 34px;
+        background: var(--accent-olive);
+        border: 1px solid var(--border-hard);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 12px;
+        margin-right: 10px;
+      }
+
+      .badge {
+        font-size: 11px;
+        padding: 3px 9px;
+        border: 1px solid var(--border-hard);
+      }
+
+      .badge-olive {
+        background: var(--accent-olive);
+        color: var(--accent-olive-text);
+      }
+      .badge-rose {
+        background: var(--accent-rose);
+        color: var(--accent-rose-text);
+      }
+      .badge-gold {
+        background: var(--accent-gold);
+        color: var(--accent-gold-text);
+      }
+
+      .btn-roman {
+        background: var(--brand-primary);
+        color: var(--brand-foreground);
+        border: 1px solid var(--border-hard);
+        box-shadow: 2px 2px 0 var(--border-hard);
+        padding: 8px 14px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .btn-roman:hover {
+        background: var(--brand-primary-hover);
+      }
+
+      .notice-box {
+        background: var(--accent-gold);
+        border: 1px solid var(--border-hard);
+        padding: 14px;
+        font-size: 13px;
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--border-hard);
+        color: var(--brand-foreground);
+        padding: 10px 16px;
+        font-size: 12px;
+        border: 1px solid var(--brand-primary);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .toast.show {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-ribbon mono">
+      <span>✦ IL PORTALE DEGLI STUDENTI DI 42 ROMA</span>
+      <span>EST. 2021 — ROMA, ITALIA</span>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="brand">
+          <div class="brand-42 display">42</div>
+          <div>
+            <div class="brand-title mono">ROMA STUDENTI</div>
+            <div class="brand-sub mono">palette_romana_90s.css</div>
+          </div>
+        </div>
+        <div class="status-pill mono">
+          <span class="dot"></span>
+          <span>CAMPUS ONLINE</span>
+        </div>
+      </header>
+
+      <h2 class="display">La palette ufficiale<span class="cursor">_</span></h2>
+      <p class="section-desc">
+        Fai clic su qualsiasi scheda per copiare il codice HEX negli appunti.
+      </p>
+
+      <div class="palette-grid" id="paletteGrid"></div>
+
+      <h2 class="display">Anteprima componenti<span class="cursor">_</span></h2>
+      <p class="section-desc">
+        Esempio di come interagiscono i colori in schede, badge e pulsanti.
+      </p>
+
+      <div class="preview-window">
+        <div class="preview-bar mono">
+          <span>BACHECA_PREVIEW.EXE</span>
+          <div class="window-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="preview-content">
+          <div class="post-card">
+            <div class="post-header">
+              <div style="display: flex; align-items: center">
+                <div class="avatar mono">GV</div>
+                <div>
+                  <div class="mono" style="font-weight: 700; font-size: 13px">
+                    gverdi
+                  </div>
+                  <div
+                    class="mono"
+                    style="font-size: 11px; color: var(--text-secondary)">
+                    12 minuti fa
+                  </div>
+                </div>
+              </div>
+              <span class="badge badge-olive mono">Studio</span>
+            </div>
+            <p style="font-size: 14px; line-height: 1.5; margin: 0 0 16px 0">
+              Qualcuno per una sessione di peer learning su
+              <strong>minishell</strong>? Ci troviamo in cluster alle 15:00!
+              Porto i biscotti.
+            </p>
+            <div style="display: flex; gap: 8px; align-items: center">
+              <button
+                class="btn-roman mono"
+                onclick="showToast('♥ Daje! Mi piace registrato')">
+                ♥ Daje! (14)
+              </button>
+              <span class="badge badge-rose mono">Evento casuale</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 14px">
+            <div class="notice-box">
+              <div
+                class="mono"
+                style="font-weight: 700; font-size: 11px; margin-bottom: 6px">
+                📌 MESSAGGIO FISSATO
+              </div>
+              Benvenuti nel nostro angolo di Roma! Un posto per studiare
+              insieme, fare amicizia e organizzare la prossima avventura.
+            </div>
+            <div
+              style="
+                border: 1px dashed var(--border-hard);
+                padding: 12px;
+                font-size: 12px;
+              "
+              class="mono">
+              <strong>Token CSS:</strong><br />
+              --bg-travertine: #F6F2E9;<br />
+              --brand-primary: #9B2928;<br />
+              --border-hard: #2B2927;
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast mono" id="toast">Copiato</div>
+
+    <script>
+      const colors = [
+        {
+          name: "Travertino Crema",
+          hex: "#F6F2E9",
+          role: "Sfondo principale dell'applicazione (caldo, zero affaticamento visivo).",
+          varName: "--bg-travertine",
+        },
+        {
+          name: "Pergamena Chiara",
+          hex: "#FCFBF7",
+          role: "Superficie interna di schede, modali e finestre.",
+          varName: "--surface-card",
+        },
+        {
+          name: "Sabbia Chiara",
+          hex: "#EFECE4",
+          role: "Barre superiori delle finestre (.panel-bar) e sfondi secondari.",
+          varName: "--surface-muted",
+        },
+        {
+          name: "Inchiostro Foro",
+          hex: "#23211E",
+          role: "Testo principale, titoli e corpo dei messaggi.",
+          varName: "--text-primary",
+        },
+        {
+          name: "Pietra Antica",
+          hex: "#6E695F",
+          role: "Timestamp, sottotitoli e metadati secondari.",
+          varName: "--text-secondary",
+        },
+        {
+          name: "Rosso Imperiale",
+          hex: "#9B2928",
+          role: "Colore primario del brand, pulsanti e fascia superiore.",
+          varName: "--brand-primary",
+        },
+        {
+          name: "Terracotta Scura",
+          hex: "#7D1E1D",
+          role: "Stato hover dei pulsanti principali.",
+          varName: "--brand-primary-hover",
+        },
+        {
+          name: "Bronzo Scuro",
+          hex: "#2B2927",
+          role: "Bordi netti da 1px stile Windows 95 e ombre solide.",
+          varName: "--border-hard",
+        },
+        {
+          name: "Verde Oliva",
+          hex: "#DCE8D0",
+          role: "Categoria Studio, Tech e schede del Coding Club.",
+          varName: "--accent-olive",
+        },
+        {
+          name: "Rosa Affresco",
+          hex: "#F5D6D6",
+          role: "Categoria Evento casuale, Hackathon e mi piace attivi.",
+          varName: "--accent-rose",
+        },
+        {
+          name: "Oro Aureo",
+          hex: "#F7E6B0",
+          role: "Messaggi fissati, avvisi e categoria Vita romana.",
+          varName: "--accent-gold",
+        },
+        {
+          name: "Verde Terminale",
+          hex: "#2E8B57",
+          role: "Indicatore lampeggiante di Campus Online.",
+          varName: "--status-online",
+        },
+      ];
+
+      const grid = document.getElementById("paletteGrid");
+
+      colors.forEach((c) => {
+        const card = document.createElement("div");
+        card.className = "swatch-card";
+        card.onclick = () => {
+          navigator.clipboard.writeText(c.hex);
+          showToast(`Copiato ${c.name} (${c.hex})`);
+        };
+        card.innerHTML = `
+        <div class="swatch-bar mono">
+          <span>${c.varName}</span>
+          <div class="window-dots"><span></span><span></span></div>
+        </div>
+        <div class="swatch-color" style="background-color: ${c.hex};">
+          <span class="copy-tag mono">COPIA</span>
+        </div>
+        <div class="swatch-body">
+          <div class="swatch-name">${c.name}</div>
+          <div class="swatch-hex mono">${c.hex}</div>
+          <div class="swatch-role">${c.role}</div>
+        </div>
+      `;
+        grid.appendChild(card);
+      });
+
+      function showToast(msg) {
+        const toast = document.getElementById("toast");
+        toast.textContent = msg;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 2000);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+# --- Secrets / environment ---
+.env
+.env.*
+!.env.example
+*.local
+
+# --- Python / FastAPI (api/) ---
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.sqlite
+*.sqlite3
+*.db
+
+# --- Node / Next.js (web/) ---
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+
+# --- Editors / OS ---
+.DS_Store
+Thumbs.db
+*.log
+.idea/

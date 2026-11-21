@@ -1,0 +1,164 @@
+"""Application settings, loaded once from the environment (12-factor).
+
+Every secret and environment-specific value is read here and nowhere else, so
+the rest of the code depends on a typed ``Settings`` object rather than on
+``os.environ``. Nothing in this module has a hardcoded secret default.
+"""
+
+from __future__ import annotations
+
+from functools import lru_cache
+from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=False,
+    )
+
+    # --- App ---
+    env: str = Field(default="development", alias="ENV")
+    port: int = Field(default=9000, alias="PORT")
+    frontend_url: str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
+
+    # --- 42 OAuth2 (Authorization Code flow, scope "public") ---
+    forty_two_uid: str = Field(default="", alias="FORTY_TWO_UID")
+    forty_two_secret: str = Field(default="", alias="FORTY_TWO_SECRET")
+    forty_two_callback_url: str = Field(
+        default="http://localhost:9000/auth/42/callback",
+        alias="FORTY_TWO_CALLBACK_URL",
+    )
+    # 42 Roma campus id on the Intra (used for the public events feed).
+    forty_two_campus_id: int = Field(default=30, alias="FORTY_TWO_CAMPUS_ID")
+    # OAuth scopes requested at login. "profile" is needed to register the user
+    # to events on their behalf (POST /v2/events_users); "public" covers /me.
+    oauth_scope: str = Field(default="public profile", alias="OAUTH_SCOPE")
+
+    # --- Our own session JWT (NOT the 42 token) ---
+    jwt_secret: str = Field(default="", alias="JWT_SECRET")
+    jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
+    jwt_expire_minutes: int = Field(default=60 * 24 * 7, alias="JWT_EXPIRE_MINUTES")
+
+    # Key used to encrypt the stored 42 user tokens at rest (Fernet, urlsafe
+    # base64 of 32 bytes). If empty, a key is derived from JWT_SECRET.
+    token_encryption_key: str = Field(default="", alias="TOKEN_ENCRYPTION_KEY")
+
+    # --- Cookies ---
+    cookie_name: str = Field(default="access_token", alias="COOKIE_NAME")
+    cookie_secure: bool = Field(default=False, alias="COOKIE_SECURE")
+    cookie_samesite: str = Field(default="lax", alias="COOKIE_SAMESITE")
+    cookie_domain: str | None = Field(default=None, alias="COOKIE_DOMAIN")
+
+    # --- Database ---
+    # Runtime (async, asyncpg). Alembic uses DIRECT_URL (see alembic/env.py).
+    database_url: str = Field(default="", alias="DATABASE_URL")
+    direct_url: str = Field(default="", alias="DIRECT_URL")
+
+    # --- Events cache TTL (seconds) to stay well under 42 API rate limits ---
+    events_cache_ttl: int = Field(default=300, alias="EVENTS_CACHE_TTL")
+
+    @field_validator("cookie_samesite")
+    @classmethod
+    def _valid_samesite(cls, v: str) -> str:
+        v = v.lower()
+        if v not in {"lax", "strict", "none"}:
+            raise ValueError("COOKIE_SAMESITE must be one of: lax, strict, none")
+        return v
+
+    @property
+    def is_production(self) -> bool:
+        return self.env.lower() in {"production", "prod"}
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [self.frontend_url]
+
+    def async_database_url(self) -> str:
+        """Normalize the runtime URL to the asyncpg driver (asyncpg-safe)."""
+        url, _ = asyncpg_url_and_connect_args(self.database_url)
+        return url
+
+    def async_connect_args(self) -> dict[str, Any]:
+        """Driver connect args for the runtime engine (asyncpg)."""
+        _, connect_args = asyncpg_url_and_connect_args(self.database_url)
+        return connect_args
+
+
+def _coerce_driver(url: str, target: str) -> str:
+    """Rewrite the scheme of a Postgres URL to a specific SQLAlchemy driver.
+
+    Leaves non-postgres URLs (e.g. sqlite for tests) untouched.
+    """
+    if not url or url.startswith("sqlite"):
+        return url
+    for prefix in ("postgresql+asyncpg", "postgresql+psycopg", "postgresql", "postgres"):
+        if url.startswith(prefix + "://"):
+            return target + url[len(prefix):]
+    return url
+
+
+# Query params that libpq/Prisma-style URLs carry but asyncpg's connect() rejects.
+# (asyncpg uses ``ssl=`` instead of ``sslmode=`` and has no concept of ``pgbouncer``.)
+_ASYNCPG_DROP_PARAMS = {
+    "pgbouncer",
+    "sslmode",
+    "channel_binding",
+    "connect_timeout",
+    "options",
+    "target_session_attrs",
+}
+
+
+def asyncpg_url_and_connect_args(raw: str) -> tuple[str, dict[str, Any]]:
+    """Return an asyncpg-safe URL plus connect args for a Postgres/SQLite URL.
+
+    - Coerces the driver to ``postgresql+asyncpg`` (SQLite is left untouched).
+    - Strips query params asyncpg can't accept (notably ``pgbouncer=true`` as
+      used by Supabase's pooler) so they don't reach ``asyncpg.connect()``.
+    - Translates ``sslmode`` to asyncpg's ``ssl`` connect arg.
+    - For the Supabase transaction pooler (port 6543 / ``pgbouncer=true`` /
+      host containing ``pooler``), disables prepared-statement caching, which
+      is incompatible with pgbouncer in transaction mode.
+    """
+    if not raw or raw.startswith("sqlite"):
+        return raw, {}
+
+    url = _coerce_driver(raw, "postgresql+asyncpg")
+    parts = urlsplit(url)
+    pairs = parse_qsl(parts.query, keep_blank_values=True)
+
+    connect_args: dict[str, Any] = {}
+    pooled = (parts.port == 6543) or ("pooler" in (parts.hostname or ""))
+    kept: list[tuple[str, str]] = []
+    for key, value in pairs:
+        lowered = key.lower()
+        if lowered == "pgbouncer" and value.lower() == "true":
+            pooled = True
+            continue
+        if lowered == "sslmode":
+            if value.lower() not in {"disable", "allow"}:
+                connect_args["ssl"] = True
+            continue
+        if lowered in _ASYNCPG_DROP_PARAMS:
+            continue
+        kept.append((key, value))
+
+    if pooled:
+        # pgbouncer (transaction mode) can't keep server-side prepared statements.
+        connect_args["statement_cache_size"] = 0
+
+    clean = urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(kept), parts.fragment))
+    return clean, connect_args
+
+
+@lru_cache
+def get_settings() -> Settings:
+    """Return the process-wide settings singleton."""
+    return Settings()
