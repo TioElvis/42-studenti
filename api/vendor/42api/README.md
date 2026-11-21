@@ -1,0 +1,132 @@
+# 42api
+
+An object-oriented Python client for the [42 School API](https://api.intra.42.fr)
+(`api.intra.42.fr`) that handles OAuth2 authentication, request pacing, and
+pagination for you, so you can work with typed resources instead of raw JSON
+and HTTP plumbing.
+
+- **Sync and async** — `Client` and `AsyncClient` share one codebase and the
+  same interface.
+- **Typed models** — resources are [Pydantic v2](https://docs.pydantic.dev/)
+  models with IDE-friendly autocomplete.
+- **Automatic rate limiting** — requests are paced to stay under 42's limits;
+  `429`s are retried with backoff automatically.
+- **Lazy pagination** — iterate a query and it walks every page for you.
+
+## Install
+
+```bash
+uv add 42api
+# or: pip install 42api
+```
+
+## Usage
+
+```python
+from intra42 import Client
+
+with Client(client_id="...", client_secret="...") as client:
+    user = client.users.get("jdoe")
+    print(user.login, user.email)
+
+    for user in client.users.filter(primary_campus_id=1).sort("-pool_year"):
+        print(user.login)
+```
+
+Async is the same shape:
+
+```python
+import asyncio
+from intra42 import AsyncClient
+
+
+async def main() -> None:
+    async with AsyncClient(client_id="...", client_secret="...") as client:
+        user = await client.users.get("jdoe")
+        async for user in client.users.filter(primary_campus_id=1).sort("-pool_year"):
+            print(user.login)
+
+
+asyncio.run(main())
+```
+
+Fetched instances expose their nested resources directly — no need to
+build the scoped path yourself:
+
+```python
+campus = client.campuses.get(1)
+for event in campus.events:  # GET /campus/1/events
+    print(event.name)
+
+user = client.users.get("jdoe")
+for cu in user.campus_users:  # GET /users/jdoe/campus_users
+    print(cu.campus_id, cu.is_primary)
+```
+
+These (`campus.events`, `campus.users`, `user.events`, `user.campus_users`)
+are only available on instances fetched via a client — a manually
+constructed model raises a clear `RuntimeError` if accessed.
+
+Get your `client_id`/`client_secret` by registering an app at
+https://profile.intra.42.fr/oauth/applications. This library uses the
+**client credentials** flow, so it accesses the API as your app rather than
+as a specific logged-in user.
+
+## Errors
+
+All errors subclass `intra42.FortyTwoAPIError`, with subclasses for common
+HTTP statuses: `AuthenticationError` (401), `PermissionDeniedError` (403),
+`NotFoundError` (404), `ValidationError` (422), `RateLimitError` (429, only
+raised once the built-in retry budget is exhausted), `ServerError` (5xx),
+and `NetworkError` (connection/timeout failures).
+
+## Status
+
+Early-stage: currently covers `users`, `accreditations`, `campuses`,
+`campus_users`, `cursus`, `events`, `events_users`, `exams`, `locations`,
+`projects`, and `projects_users` (`exams`, `locations`, and `projects_users`
+each include their `graph` analytics endpoint). More resources are added
+incrementally on top of the same client/model/query-builder pattern.
+
+`events_users` also exposes the first write endpoints, `subscribe` /
+`unsubscribe` (register a user to an event and cancel it):
+
+```python
+registration = client.events_users.subscribe(event_id=1234, user_id=42)
+client.events_users.unsubscribe(registration.id)
+```
+
+These two calls need a resource-owner (user) token scoped on `profile` — the
+default app-level client-credentials token only grants the read endpoints. Build
+the client from a user token obtained via the authorization-code flow:
+
+```python
+client = Client.from_access_token(user_access_token)  # AsyncClient too
+client.events_users.subscribe(event_id=1234, user_id=42)
+```
+
+The remaining restricted-access APIs are not implemented currently.
+
+## Development
+
+Uses [uv](https://docs.astral.sh/uv/) for dependency management.
+
+```bash
+uv sync                                               # install dependencies
+uv run pytest                                         # run tests
+uv run ruff check . && uv run ruff format --check .   # lint
+uv run mypy                                           # type check
+```
+
+The sync client (`intra42._sync`) is generated from the async client
+(`intra42._async`) via [`unasync`](https://github.com/python-trio/unasync) —
+edit the async source and regenerate:
+
+```bash
+uv run python scripts/unasync_generate.py            # regenerate
+uv run python scripts/unasync_generate.py --check    # verify no drift (CI)
+```
+
+## License
+
+MIT

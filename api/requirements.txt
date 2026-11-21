@@ -1,0 +1,27 @@
+# 42-Roma-Studenti API — top-level pinned dependencies (Python 3.11+).
+# Full transitive lock: requirements.lock. Local 42 client: vendor/42api (editable).
+#
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
+#   pip install -e ./vendor/42api
+#
+# --- Web framework / ASGI ---
+fastapi==0.165.0
+uvicorn[standard]==0.54.0
+# --- Validation / settings ---
+pydantic==2.14.4
+pydantic-settings==2.16.3
+# --- Database (async SQLAlchemy + asyncpg) + migrations ---
+SQLAlchemy[asyncio]==2.1.9
+asyncpg==0.32.0
+alembic==1.20.1
+# --- Auth: 42 OAuth2 (Authlib/httpx) + our own JWT ---
+authlib==1.9.9
+httpx==0.28.1
+python-jose[cryptography]==3.5.0
+itsdangerous==2.2.0
+# --- Tests ---
+pytest==9.2.0
+pytest-asyncio==1.5.0
+respx==0.23.1
+aiosqlite==0.22.1

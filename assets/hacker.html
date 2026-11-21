@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>42 Roma Studenti — SPQR Hacker Palette</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet" />
+    <style>
+      :root {
+        --bg-void: #0b0d0e;
+        --surface-terminal: #121618;
+        --surface-elevated: #1a2023;
+        --text-primary: #e6ece8;
+        --text-muted: #7b8a84;
+        --brand-crimson: #e63946;
+        --brand-crimson-glow: rgba(230, 57, 70, 0.25);
+        --hacker-green: #00ff88;
+        --hacker-green-dim: rgba(0, 255, 136, 0.12);
+        --border-grid: #273136;
+        --border-active: #00ff88;
+        --accent-cyan: #00e5ff;
+        --accent-cyan-bg: rgba(0, 229, 255, 0.12);
+        --accent-amber: #ffb703;
+        --accent-amber-bg: rgba(255, 183, 3, 0.12);
+        --accent-purple: #b5179e;
+        --accent-purple-bg: rgba(181, 23, 158, 0.15);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: var(--bg-void);
+        color: var(--text-primary);
+        font-family: "IBM Plex Mono", monospace;
+        margin: 0;
+        padding: 0;
+        background-image:
+          linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+        background-size: 24px 24px;
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0.14),
+          rgba(0, 0, 0, 0.14) 1px,
+          transparent 1px,
+          transparent 2px
+        );
+        pointer-events: none;
+        z-index: 999;
+      }
+
+      .top-ribbon {
+        background: var(--surface-terminal);
+        border-bottom: 1px solid var(--brand-crimson);
+        color: var(--brand-crimson);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        padding: 8px 24px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .container {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 32px 24px 72px;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 36px;
+        border: 1px solid var(--border-grid);
+        background: var(--surface-terminal);
+        padding: 18px 22px;
+        box-shadow: 4px 4px 0 var(--brand-crimson);
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .logo-42 {
+        font-family: "Space Mono", monospace;
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--hacker-green);
+        text-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+      }
+
+      .status-badge {
+        border: 1px solid var(--hacker-green);
+        background: var(--hacker-green-dim);
+        color: var(--hacker-green);
+        padding: 6px 12px;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        background: var(--hacker-green);
+        box-shadow: 0 0 8px var(--hacker-green);
+        animation: pulse 1.4s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.25;
+        }
+      }
+
+      @keyframes blink {
+        0%,
+        49% {
+          opacity: 1;
+        }
+        50%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      .cursor {
+        color: var(--hacker-green);
+        animation: blink 0.9s infinite;
+      }
+
+      h2 {
+        font-family: "Space Mono", monospace;
+        font-size: 20px;
+        margin: 0 0 6px 0;
+        color: var(--text-primary);
+      }
+
+      .subtitle {
+        color: var(--text-muted);
+        font-size: 13px;
+        margin: 0 0 24px 0;
+      }
+
+      .palette-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 18px;
+        margin-bottom: 48px;
+      }
+
+      .swatch-card {
+        background: var(--surface-terminal);
+        border: 1px solid var(--border-grid);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .swatch-card:hover {
+        border-color: var(--hacker-green);
+        transform: translate(-2px, -2px);
+        box-shadow: 4px 4px 0 var(--hacker-green);
+      }
+
+      .swatch-header {
+        background: var(--surface-elevated);
+        border-bottom: 1px solid var(--border-grid);
+        padding: 5px 10px;
+        font-size: 10px;
+        color: var(--text-muted);
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .swatch-preview {
+        height: 88px;
+        border-bottom: 1px solid var(--border-grid);
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+        padding: 8px;
+      }
+
+      .copy-pill {
+        background: rgba(11, 13, 14, 0.85);
+        border: 1px solid var(--border-grid);
+        color: var(--text-primary);
+        font-size: 10px;
+        padding: 2px 6px;
+      }
+
+      .swatch-info {
+        padding: 12px;
+      }
+
+      .swatch-name {
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+
+      .swatch-hex {
+        color: var(--hacker-green);
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+
+      .swatch-desc {
+        color: var(--text-muted);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .terminal-window {
+        background: var(--surface-terminal);
+        border: 1px solid var(--border-grid);
+        box-shadow: 5px 5px 0 var(--border-grid);
+      }
+
+      .terminal-bar {
+        background: var(--surface-elevated);
+        border-bottom: 1px solid var(--border-grid);
+        padding: 8px 14px;
+        font-size: 11px;
+        color: var(--text-muted);
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .terminal-body {
+        padding: 24px;
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 24px;
+      }
+
+      @media (max-width: 768px) {
+        .terminal-body {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .post-box {
+        background: var(--bg-void);
+        border: 1px solid var(--border-grid);
+        padding: 16px;
+      }
+
+      .tag {
+        font-size: 11px;
+        padding: 3px 8px;
+        border: 1px solid;
+        display: inline-block;
+      }
+
+      .tag-studio {
+        color: var(--hacker-green);
+        border-color: var(--hacker-green);
+        background: var(--hacker-green-dim);
+      }
+      .tag-team {
+        color: var(--accent-cyan);
+        border-color: var(--accent-cyan);
+        background: var(--accent-cyan-bg);
+      }
+      .tag-event {
+        color: var(--accent-amber);
+        border-color: var(--accent-amber);
+        background: var(--accent-amber-bg);
+      }
+
+      .btn-hack {
+        background: var(--brand-crimson);
+        color: #fff;
+        border: 1px solid var(--brand-crimson);
+        padding: 8px 14px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 3px 3px 0 rgba(230, 57, 70, 0.35);
+      }
+
+      .btn-hack:hover {
+        background: transparent;
+        color: var(--brand-crimson);
+      }
+
+      .sys-alert {
+        border: 1px solid var(--accent-amber);
+        background: var(--accent-amber-bg);
+        color: var(--accent-amber);
+        padding: 14px;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--bg-void);
+        border: 1px solid var(--hacker-green);
+        color: var(--hacker-green);
+        padding: 10px 16px;
+        font-size: 12px;
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.25);
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+      }
+
+      .toast.show {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-ribbon">
+      <span>root@42roma:~$ ./init_campus_network.sh --theme=spqr-cyber</span>
+      <span>[LAT: 41.9028° N // LON: 12.4964° E]</span>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="brand">
+          <div class="logo-42">42_</div>
+          <div>
+            <div
+              style="font-weight: 700; font-size: 15px; letter-spacing: 0.06em">
+              ROMA_STUDENTI.EXE
+            </div>
+            <div style="color: var(--text-muted); font-size: 12px">
+              SPQR // HACKER_ROMAN_PALETTE_V2
+            </div>
+          </div>
+        </div>
+        <div class="status-badge">
+          <span class="dot"></span>
+          <span>NODE_ONLINE :: 42_INTRA_SYNCED</span>
+        </div>
+      </header>
+
+      <h2>&gt; Colori_Sistema<span class="cursor">_</span></h2>
+      <p class="subtitle">
+        Fai clic su qualsiasi blocco per copiare il codice HEX. Unisce un
+        terminale CRT al rosso imperiale romano.
+      </p>
+
+      <div class="palette-grid" id="grid"></div>
+
+      <h2>&gt; Anteprima_UI<span class="cursor">_</span></h2>
+      <p class="subtitle">
+        Simulazione della Bacheca con badge di categoria e pulsanti d'azione.
+      </p>
+
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <span>/var/www/42-roma/bacheca.tty</span>
+          <span>[ - ] [ □ ] [ × ]</span>
+        </div>
+        <div class="terminal-body">
+          <div class="post-box">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+              ">
+              <div>
+                <span style="color: var(--hacker-green); font-weight: 700"
+                  >@gverdi</span
+                >
+                <span style="color: var(--text-muted); font-size: 11px">
+                  • 12m fa</span
+                >
+              </div>
+              <span class="tag tag-studio">[STUDIO]</span>
+            </div>
+            <p style="font-size: 13px; line-height: 1.55; margin: 0 0 16px 0">
+              Qualcuno in cluster per debuggare
+              <span style="color: var(--accent-cyan)">minishell</span>? Ho
+              segfault sui pipe annidati. Offro caffè alle macchinette.
+            </p>
+            <div
+              style="
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                flex-wrap: wrap;
+              ">
+              <button class="btn-hack" onclick="copyMsg('♥ Daje! +1 Respect')">
+                ♥ DAJE! [14]
+              </button>
+              <span class="tag tag-team">[CERCO_TEAM]</span>
+              <span class="tag tag-event">[EVENTO]</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 14px">
+            <div class="sys-alert">
+              <strong>[!] BROADCAST_MESSAGE:</strong><br />
+              Benvenuti nel terminale degli studenti di 42 Roma. Nessun admin,
+              solo codice e community.
+            </div>
+            <div
+              style="
+                background: var(--bg-void);
+                border: 1px dashed var(--border-grid);
+                padding: 12px;
+                font-size: 11px;
+                color: var(--text-muted);
+              ">
+              --bg-void: #0B0D0E;<br />
+              --hacker-green: #00FF88;<br />
+              --brand-crimson: #E63946;<br />
+              --accent-cyan: #00E5FF;
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast">Copiato</div>
+
+    <script>
+      const palette = [
+        {
+          name: "Ossidiana Void",
+          hex: "#0B0D0E",
+          token: "--bg-void",
+          desc: "Sfondo principale in stile terminale CRT scuro.",
+        },
+        {
+          name: "Terminale Scuro",
+          hex: "#121618",
+          token: "--surface-terminal",
+          desc: "Sfondo di schede, finestre e pannelli.",
+        },
+        {
+          name: "Acciaio Grigio",
+          hex: "#1A2023",
+          token: "--surface-elevated",
+          desc: "Barre superiori delle finestre e stato hover.",
+        },
+        {
+          name: "Griglia Bordi",
+          hex: "#273136",
+          token: "--border-grid",
+          desc: "Bordi tecnici da 1px tra i moduli.",
+        },
+        {
+          name: "Fosforo 42",
+          hex: "#00FF88",
+          token: "--hacker-green",
+          desc: "Accento hacker principale, cursori, login e Studio.",
+        },
+        {
+          name: "Rosso Imperiale Neon",
+          hex: "#E63946",
+          token: "--brand-crimson",
+          desc: "Richiamo a Roma: pulsanti principali, avvisi e brand.",
+        },
+        {
+          name: "Ciano Cyber",
+          hex: "#00E5FF",
+          token: "--accent-cyan",
+          desc: "Categoria Cerco Team, link e codice.",
+        },
+        {
+          name: "Ambra Romano",
+          hex: "#FFB703",
+          token: "--accent-amber",
+          desc: "Categoria Evento Casuale, avvisi e notifiche.",
+        },
+        {
+          name: "Porpora Tech",
+          hex: "#B5179E",
+          token: "--accent-purple",
+          desc: "Categoria Off-topic / Meme / Hackathon.",
+        },
+        {
+          name: "Bianco Schermo",
+          hex: "#E6ECE8",
+          token: "--text-primary",
+          desc: "Testo principale ad alta leggibilità senza abbagliare.",
+        },
+        {
+          name: "Cenere Sistema",
+          hex: "#7B8A84",
+          token: "--text-muted",
+          desc: "Timestamp, percorsi di terminale e metadati.",
+        },
+      ];
+
+      const grid = document.getElementById("grid");
+
+      palette.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "swatch-card";
+        card.onclick = () => {
+          navigator.clipboard.writeText(item.hex);
+          copyMsg(`> Copiato ${item.name}: ${item.hex}`);
+        };
+        card.innerHTML = `
+        <div class="swatch-header">
+          <span>${item.token}</span>
+          <span>HEX</span>
+        </div>
+        <div class="swatch-preview" style="background:${item.hex};">
+          <span class="copy-pill">[COPIA]</span>
+        </div>
+        <div class="swatch-info">
+          <div class="swatch-name">${item.name}</div>
+          <div class="swatch-hex">${item.hex}</div>
+          <div class="swatch-desc">${item.desc}</div>
+        </div>
+      `;
+        grid.appendChild(card);
+      });
+
+      function copyMsg(text) {
+        const t = document.getElementById("toast");
+        t.textContent = text;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2000);
+      }
+    </script>
+  </body>
+</html>

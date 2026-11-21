@@ -1,0 +1,274 @@
+/* 42 Roma Studenti — unified design system with two swappable 90s themes.
+ *
+ * Both themes share the SAME layout, window chrome and semantic token NAMES.
+ * Switching theme only remaps these CSS custom properties (see the
+ * [data-theme="..."] blocks) — never the structure. Palettes are lifted
+ * verbatim from assets/classic.html and assets/hacker.html.
+ */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap");
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+ * Shared font families
+ * ------------------------------------------------------------------------- */
+:root {
+  --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+  --font-display: "Space Mono", "IBM Plex Mono", monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ * THEME A — Classico Romano (default). From assets/classic.html.
+ * ------------------------------------------------------------------------- */
+:root,
+[data-theme="classic"] {
+  --bg: #f6f2e9;
+  --surface: #fcfbf7;
+  --surface-2: #efece4;
+  --surface-sunken: #f6f2e9;
+  --text: #23211e;
+  --text-muted: #6e695f;
+  --primary: #9b2928;
+  --primary-hover: #7d1e1d;
+  --primary-fg: #fcfbf7;
+  --border: #2b2927;
+  --border-subtle: #d8d1c3;
+  --ring: #9b2928;
+  --status-online: #2e8b57;
+  --shadow: #2b2927;
+  --ribbon-bg: #9b2928;
+  --ribbon-fg: #fcfbf7;
+
+  --body-font: var(--font-sans);
+  --grid-color: transparent;
+  --grid-size: 24px;
+  --scanline-opacity: 0;
+  --glow: none;
+
+  /* Category badges: solid pastel fill, dark ink, hard border. */
+  --cat-studio-bg: #dce8d0;      --cat-studio-fg: #2f4a22;
+  --cat-cerco_team-bg: #f5d6d6;  --cat-cerco_team-fg: #7a2323;
+  --cat-evento_casuale-bg: #f7e6b0; --cat-evento_casuale-fg: #5c4510;
+  --cat-vita_romana-bg: #d6e4f5; --cat-vita_romana-fg: #234a7a;
+  --cat-mercatino-bg: #e6dcf5;   --cat-mercatino-fg: #4a237a;
+  --cat-off_topic-bg: #efe7d8;   --cat-off_topic-fg: #6e5a2e;
+  --cat-border: var(--border);
+}
+
+/* ---------------------------------------------------------------------------
+ * THEME B — SPQR Hacker. From assets/hacker.html.
+ * ------------------------------------------------------------------------- */
+[data-theme="hacker"] {
+  --bg: #0b0d0e;
+  --surface: #121618;
+  --surface-2: #1a2023;
+  --surface-sunken: #0b0d0e;
+  --text: #e6ece8;
+  --text-muted: #7b8a84;
+  --primary: #e63946;
+  --primary-hover: #c42d39;
+  --primary-fg: #ffffff;
+  --border: #273136;
+  --border-subtle: #273136;
+  --ring: #00ff88;
+  --status-online: #00ff88;
+  --shadow: #273136;
+  --ribbon-bg: #121618;
+  --ribbon-fg: #e63946;
+
+  --body-font: var(--font-mono);
+  --grid-color: rgba(0, 255, 136, 0.03);
+  --grid-size: 24px;
+  --scanline-opacity: 1;
+  --glow: 0 0 12px rgba(0, 255, 136, 0.4);
+
+  /* Category badges: neon text + border, translucent fill. */
+  --cat-studio-bg: rgba(0, 255, 136, 0.12);  --cat-studio-fg: #00ff88;
+  --cat-cerco_team-bg: rgba(0, 229, 255, 0.12); --cat-cerco_team-fg: #00e5ff;
+  --cat-evento_casuale-bg: rgba(255, 183, 3, 0.12); --cat-evento_casuale-fg: #ffb703;
+  --cat-vita_romana-bg: rgba(255, 92, 138, 0.14); --cat-vita_romana-fg: #ff5c8a;
+  --cat-mercatino-bg: rgba(181, 23, 158, 0.15); --cat-mercatino-fg: #d14fc0;
+  --cat-off_topic-bg: rgba(160, 228, 38, 0.13); --cat-off_topic-fg: #a0e426;
+  --cat-border: currentColor;
+}
+
+/* ---------------------------------------------------------------------------
+ * Base elements
+ * ------------------------------------------------------------------------- */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--body-font);
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* CRT scanline overlay — invisible (opacity 0) in the classic theme. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  opacity: var(--scanline-opacity);
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.14),
+    rgba(0, 0, 0, 0.14) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+}
+
+.font-display { font-family: var(--font-display); }
+.font-mono { font-family: var(--font-mono); }
+.font-sans { font-family: var(--font-sans); }
+
+/* Every interactive button shows a pointer; disabled ones don't. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+ * Retro OS chrome — shared by both themes
+ * ------------------------------------------------------------------------- */
+.retro-shadow { box-shadow: 3px 3px 0 var(--shadow); }
+.retro-shadow-sm { box-shadow: 2px 2px 0 var(--shadow); }
+.retro-shadow-lg { box-shadow: 5px 5px 0 var(--shadow); }
+
+.hover-lift {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hover-lift:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--shadow);
+}
+
+.window {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.window-bar {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 14px;
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+.window-dots { display: flex; gap: 3px; align-items: center; }
+.window-dots > span {
+  width: 6px; height: 6px;
+  border: 1px solid var(--border);
+  display: inline-block;
+}
+
+/* Category badge — color comes from per-category CSS vars set below. */
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  padding: 3px 9px;
+  border: 1px solid var(--cat-border);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  background: var(--_bg);
+  color: var(--_fg);
+}
+.cat-studio { --_bg: var(--cat-studio-bg); --_fg: var(--cat-studio-fg); }
+.cat-cerco_team { --_bg: var(--cat-cerco_team-bg); --_fg: var(--cat-cerco_team-fg); }
+.cat-evento_casuale { --_bg: var(--cat-evento_casuale-bg); --_fg: var(--cat-evento_casuale-fg); }
+.cat-vita_romana { --_bg: var(--cat-vita_romana-bg); --_fg: var(--cat-vita_romana-fg); }
+.cat-mercatino { --_bg: var(--cat-mercatino-bg); --_fg: var(--cat-mercatino-fg); }
+.cat-off_topic { --_bg: var(--cat-off_topic-bg); --_fg: var(--cat-off_topic-fg); }
+
+/* ---------------------------------------------------------------------------
+ * Animations (required by the spec)
+ * ------------------------------------------------------------------------- */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.85); }
+}
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--status-online);
+  box-shadow: var(--glow);
+  animation: pulse-dot 1.6s infinite;
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.cursor-blink {
+  animation: blink 1s steps(1) infinite;
+  color: var(--primary);
+  font-family: var(--font-display);
+}
+[data-theme="hacker"] .cursor-blink { color: var(--status-online); }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  opacity: 0;
+  animation: fade-up 0.5s ease forwards;
+}
+
+@keyframes ken-burns {
+  0% { transform: scale(1) translate(0, 0); }
+  50% { transform: scale(1.08) translate(-1.5%, -1%); }
+  100% { transform: scale(1) translate(0, 0); }
+}
+.ken-burns { animation: ken-burns 24s ease-in-out infinite; }
+
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.4); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.heart-pop { animation: heart-pop 0.45s ease; }
+
+/* Honor reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .ken-burns { animation: none; }
+  .fade-up { opacity: 1; }
+}
+
+/* Focus visibility for keyboard users. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--primary);
+  color: var(--primary-fg);
+}
