@@ -164,6 +164,31 @@ export interface Intra42Info {
   achievements: string[];
 }
 
+export type NotificationKind = "post" | "comment" | "reply" | "follow";
+
+export interface AppNotification {
+  id: number;
+  type: NotificationKind;
+  actor: UserPublic;
+  post_id: number | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface NotificationPage {
+  items: AppNotification[];
+  next_cursor: number | null;
+  unread: number;
+}
+
+export type PostNotify = "off" | "followed" | "all";
+
+export interface NotificationSettings {
+  notify_posts: PostNotify;
+  notify_comments: boolean;
+  notify_follows: boolean;
+}
+
 export interface Profile {
   login: string;
   display_name: string | null;
@@ -172,4 +197,8 @@ export interface Profile {
   is_me: boolean;
   activity: ActivityStats;
   intra: Intra42Info;
+  followers: number;
+  following: number;
+  is_following: boolean;
+  followable: boolean;
 }

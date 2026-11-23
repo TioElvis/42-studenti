@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Avatar } from "@/components/chrome/avatar";
+import { Button } from "@/components/ui/button";
 import { Window, WindowBar } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,8 @@ export function ProfileView({ login }: { login: string }) {
   const router = useRouter();
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [following, setFollowing] = React.useState(false);
+  const [followers, setFollowers] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -71,6 +74,27 @@ export function ProfileView({ login }: { login: string }) {
       cancelled = true;
     };
   }, [login, t]);
+
+  React.useEffect(() => {
+    if (profile) {
+      setFollowing(profile.is_following);
+      setFollowers(profile.followers);
+    }
+  }, [profile]);
+
+  async function toggleFollow() {
+    if (!profile) return;
+    const next = !following;
+    setFollowing(next);
+    setFollowers((c) => c + (next ? 1 : -1));
+    try {
+      if (next) await api.followUser(profile.login);
+      else await api.unfollowUser(profile.login);
+    } catch {
+      setFollowing(!next);
+      setFollowers((c) => c + (next ? -1 : 1));
+    }
+  }
 
   return (
     <section className="flex flex-col gap-4">
@@ -110,6 +134,25 @@ export function ProfileView({ login }: { login: string }) {
                     <span>
                       {t("profile.memberSince")} {fullDate(profile.intra.joined, lang)}
                     </span>
+                  )}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+                  <span className="font-mono text-xs">
+                    <b className="tabular-nums">{followers}</b>{" "}
+                    <span className="text-[var(--text-muted)]">{t("profile.followers")}</span>
+                  </span>
+                  <span className="font-mono text-xs">
+                    <b className="tabular-nums">{profile.following}</b>{" "}
+                    <span className="text-[var(--text-muted)]">{t("profile.following")}</span>
+                  </span>
+                  {profile.followable && (
+                    <Button
+                      variant={following ? "outline" : "primary"}
+                      size="sm"
+                      onClick={toggleFollow}
+                    >
+                      {following ? t("profile.unfollow") : t("profile.follow")}
+                    </Button>
                   )}
                 </div>
               </div>

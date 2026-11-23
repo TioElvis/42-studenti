@@ -16,6 +16,7 @@ from ..schemas.post import (
     RsvpState,
 )
 from ..schemas.user import UserPublic
+from ..services import notifications as notif_service
 from ..services import posts as posts_service
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -45,6 +46,7 @@ async def create_post(session: SessionDep, user: CurrentUser, data: PostCreate) 
     created = await posts_service.create_post(session, author=user, data=data)
     detail = await posts_service.get_detail(session, post_id=created.id, viewer_id=user.id)
     await manager.broadcast("post.created", detail.model_dump(mode="json"))
+    await notif_service.create_post_notifications(session, post_id=created.id, author_id=user.id)
     return detail
 
 

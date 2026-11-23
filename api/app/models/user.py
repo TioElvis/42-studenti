@@ -9,10 +9,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, DateTime, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, Enum as SAEnum, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+from .enums import PostNotify
 
 if TYPE_CHECKING:
     from .comment import Comment
@@ -40,6 +41,20 @@ class User(Base, TimestampMixin):
     )
     last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
+    )
+
+    # --- Notification preferences ---
+    notify_posts: Mapped[PostNotify] = mapped_column(
+        SAEnum(PostNotify, name="post_notify", native_enum=False, length=16),
+        nullable=False,
+        default=PostNotify.FOLLOWED,
+        server_default="followed",
+    )
+    notify_comments: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+    notify_follows: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
     )
 
     # 42 user tokens (encrypted at rest) to act on 42 on the student's behalf.

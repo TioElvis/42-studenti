@@ -19,6 +19,7 @@ from ..models.post import Post
 from ..models.rsvp import PostRSVP
 from ..models.user import User
 from ..schemas.profile import ActivityStats, Intra42Info, ProfileOut, ProjectInfo
+from . import follows as follows_service
 from .exceptions import NotFoundError
 
 
@@ -40,23 +41,31 @@ async def get_profile(
     if settings.forty_two_campus_id not in info.campus_ids:
         raise NotFoundError("Studente non trovato")
 
-    # In-app activity is only known for students who've used the app.
+    # In-app activity / social are only known for students who've used the app.
     local = (
         await session.execute(select(User).where(User.login == info.login))
     ).scalar_one_or_none()
-    activity = (
-        await _activity(session, user_id=local.id, logins=local.login_count)
-        if local is not None
-        else ActivityStats(posts=0, comments=0, daje_received=0, rsvps=0, logins=0)
-    )
+    is_me = info.login == viewer.login
+    if local is not None:
+        activity = await _activity(session, user_id=local.id, logins=local.login_count)
+        followers, following, is_following = await follows_service.stats(
+            session, user_id=local.id, viewer_id=viewer.id
+        )
+    else:
+        activity = ActivityStats(posts=0, comments=0, daje_received=0, rsvps=0, logins=0)
+        followers, following, is_following = 0, 0, False
 
     return ProfileOut(
         login=info.login,
         display_name=info.display_name,
         avatar_url=info.avatar_url,
         campus=info.campus,
-        is_me=info.login == viewer.login,
+        is_me=is_me,
         activity=activity,
+        followers=followers,
+        following=following,
+        is_following=is_following,
+        followable=local is not None and not is_me,
         intra=Intra42Info(
             level=info.level,
             grade=info.grade,

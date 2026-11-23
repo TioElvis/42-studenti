@@ -12,6 +12,7 @@ import { StatusPill } from "@/components/chrome/status-pill";
 import { NavTabs } from "@/components/chrome/nav-tabs";
 import { SettingsModal } from "@/components/chrome/settings-modal";
 import { UserMenu } from "@/components/chrome/user-menu";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 /**
  * The authentication gate. Unauthenticated visitors only ever see <LoginGate>;
@@ -42,6 +43,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           <span className="hidden md:inline-flex">
             <StatusPill />
           </span>
+          <NotificationBell />
           <SettingsModal compact />
           <UserMenu />
         </div>

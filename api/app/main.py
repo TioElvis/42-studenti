@@ -20,7 +20,19 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import __version__
 from .config import Settings, get_settings
-from .routers import auth, comments, content, events, me, posts, profile, students, ws
+from .routers import (
+    auth,
+    comments,
+    content,
+    events,
+    follows,
+    me,
+    notifications,
+    posts,
+    profile,
+    students,
+    ws,
+)
 from .services.exceptions import ConflictError, ForbiddenError, NotFoundError
 
 logger = logging.getLogger("app")
@@ -122,6 +134,8 @@ def create_app() -> FastAPI:
     app.include_router(content.router)
     app.include_router(profile.router)
     app.include_router(students.router)
+    app.include_router(follows.router)
+    app.include_router(notifications.router)
     app.include_router(ws.router)
 
     @app.get("/health", tags=["meta"])
