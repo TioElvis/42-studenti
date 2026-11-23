@@ -44,6 +44,12 @@ export function Feed({ postType }: FeedProps = {}) {
   const [attendeesPostId, setAttendeesPostId] = React.useState<number | null>(null);
   const [pendingDelete, setPendingDelete] = React.useState<Post | null>(null);
 
+  // Deep link: /?post=<id> (e.g. from a notification) opens that post's thread.
+  React.useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get("post");
+    if (raw && /^\d+$/.test(raw)) setDetailPostId(Number(raw));
+  }, []);
+
   const load = React.useCallback(async (f: CategoryFilter) => {
     setLoading(true);
     setError(null);

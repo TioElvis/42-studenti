@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useTheme, type Theme } from "@/providers/theme-provider";
 import { useI18n } from "@/providers/i18n-provider";
 import { LANGS } from "@/lib/messages";
+import { NotificationSettingsSection } from "@/components/notifications/notification-settings";
 
 interface ThemeOption {
   id: Theme;
@@ -35,9 +36,10 @@ const OPTIONS: ThemeOption[] = [
 export function SettingsModal({ compact = false }: { compact?: boolean }) {
   const { theme, setTheme } = useTheme();
   const { lang, setLang, t } = useI18n();
+  const [open, setOpen] = React.useState(false);
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size={compact ? "icon" : "sm"} aria-label={t("settings.trigger")}>
           <Settings2 className="h-4 w-4" />
@@ -112,6 +114,15 @@ export function SettingsModal({ compact = false }: { compact?: boolean }) {
             );
           })}
         </div>
+
+        {/* Notifications */}
+        <h3 className="mb-1 mt-5 font-mono text-xs font-bold uppercase tracking-wide text-[var(--text-muted)]">
+          {t("notifications.settingsHeading")}
+        </h3>
+        <p className="mb-3 text-sm text-[var(--text-muted)]">
+          {t("notifications.settingsIntro")}
+        </p>
+        {open && <NotificationSettingsSection />}
       </DialogContent>
     </Dialog>
   );

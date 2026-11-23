@@ -39,7 +39,7 @@ class Intra42Info(BaseModel):
 
 
 class ProfileOut(BaseModel):
-    # Identity + figures come live from 42; activity is computed from our DB.
+    # Identity + figures come live from 42; activity/social come from our DB.
     login: str
     display_name: str | None
     avatar_url: str | None
@@ -47,3 +47,7 @@ class ProfileOut(BaseModel):
     is_me: bool
     activity: ActivityStats
     intra: Intra42Info
+    followers: int = 0
+    following: int = 0
+    is_following: bool = False  # does the viewer follow this student?
+    followable: bool = False  # has an app account and isn't the viewer

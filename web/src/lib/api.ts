@@ -13,6 +13,8 @@ import type {
   ContentFile,
   ContentList,
   ContentSection,
+  NotificationPage,
+  NotificationSettings,
   PostDetail,
   Profile,
   PostPage,
@@ -143,4 +145,20 @@ export const api = {
 
   searchStudents: (q: string) =>
     request<UserPublic[]>(`/students?q=${encodeURIComponent(q)}`),
+
+  followUser: (login: string) =>
+    request<void>(`/users/${encodeURIComponent(login)}/follow`, { method: "POST" }),
+  unfollowUser: (login: string) =>
+    request<void>(`/users/${encodeURIComponent(login)}/follow`, { method: "DELETE" }),
+
+  listNotifications: (cursor?: number | null) =>
+    request<NotificationPage>(`/notifications${cursor != null ? `?cursor=${cursor}` : ""}`),
+  unreadNotifications: () => request<{ unread: number }>("/notifications/unread-count"),
+  markNotificationsRead: () => request<void>("/notifications/read-all", { method: "POST" }),
+  getNotificationSettings: () => request<NotificationSettings>("/notifications/settings"),
+  updateNotificationSettings: (body: Partial<NotificationSettings>) =>
+    request<NotificationSettings>("/notifications/settings", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 };

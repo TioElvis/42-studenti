@@ -7,6 +7,7 @@ from fastapi import APIRouter, status
 from ..deps import CurrentUser, SessionDep
 from ..realtime import manager
 from ..schemas.comment import CommentCreate, CommentOut
+from ..services import notifications as notif_service
 from ..services import posts as posts_service
 
 router = APIRouter(tags=["comments"])
@@ -21,6 +22,9 @@ async def add_comment(
     session: SessionDep, user: CurrentUser, post_id: int, data: CommentCreate
 ) -> CommentOut:
     comment = await posts_service.add_comment(session, post_id=post_id, author=user, data=data)
+    await notif_service.create_comment_notifications(
+        session, post_id=post_id, actor_id=user.id, parent_comment_id=data.parent_id
+    )
     count = await posts_service.comment_count(session, post_id)
     await manager.broadcast(
         "comment.created",

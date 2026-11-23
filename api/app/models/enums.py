@@ -24,3 +24,18 @@ class PostType(str, enum.Enum):
 
     POST = "post"
     SONDAGGIO = "sondaggio"
+
+
+class NotificationType(str, enum.Enum):
+    POST = "post"  # a new post (from someone you follow, or anyone)
+    COMMENT = "comment"  # someone commented on your post
+    REPLY = "reply"  # someone replied to your comment
+    FOLLOW = "follow"  # someone started following you
+
+
+class PostNotify(str, enum.Enum):
+    """How a student wants to be notified about new posts."""
+
+    OFF = "off"
+    FOLLOWED = "followed"  # only posts from people they follow
+    ALL = "all"
