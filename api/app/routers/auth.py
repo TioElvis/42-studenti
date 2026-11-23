@@ -142,9 +142,17 @@ async def _exchange_code(settings, code: str) -> TokenBundle:
         "code": code,
         "redirect_uri": settings.forty_two_callback_url,
     }
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(TOKEN_URL, data=data)
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(TOKEN_URL, data=data)
+    except httpx.HTTPError as exc:
+        logger.warning("42 token endpoint unreachable: %s", exc)
+        raise AuthFlowError("token endpoint unreachable") from exc
     if resp.status_code != 200:
+        # 42's error body is safe to log (e.g. {"error":"invalid_client"}); no secrets.
+        logger.warning(
+            "42 token exchange rejected: status=%s body=%s", resp.status_code, resp.text[:300]
+        )
         raise AuthFlowError("token exchange rejected")
     payload = resp.json()
     access_token = payload.get("access_token")
@@ -158,9 +166,16 @@ async def _exchange_code(settings, code: str) -> TokenBundle:
 
 
 async def _fetch_profile(token: str) -> IntraProfile:
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(ME_URL, headers={"Authorization": f"Bearer {token}"})
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(ME_URL, headers={"Authorization": f"Bearer {token}"})
+    except httpx.HTTPError as exc:
+        logger.warning("42 /me endpoint unreachable: %s", exc)
+        raise AuthFlowError("profile endpoint unreachable") from exc
     if resp.status_code != 200:
+        logger.warning(
+            "42 /me fetch rejected: status=%s body=%s", resp.status_code, resp.text[:300]
+        )
         raise AuthFlowError("profile fetch rejected")
     return _parse_me(resp.json())
 
