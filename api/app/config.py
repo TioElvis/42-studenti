@@ -16,6 +16,14 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 # Materiale / Archivio content served by the content router.
 _DEFAULT_ASSETS_DIR = str(Path(__file__).resolve().parents[2] / "assets")
 
+# A browser-like User-Agent for every outbound call to 42: api.intra.42.fr is
+# behind Cloudflare, which serves a 403 bot challenge to the default
+# ``python-httpx`` UA from datacenter IPs (so OAuth fails once deployed).
+FORTY_TWO_USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+)
+
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
