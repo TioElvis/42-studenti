@@ -25,7 +25,13 @@ class Notification(Base, TimestampMixin):
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     type: Mapped[NotificationType] = mapped_column(
-        SAEnum(NotificationType, name="notification_type", native_enum=False, length=16),
+        SAEnum(
+            NotificationType,
+            name="notification_type",
+            native_enum=False,
+            length=16,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=False,
     )
     # The post the notification points at (post/comment/reply); null for follows.
