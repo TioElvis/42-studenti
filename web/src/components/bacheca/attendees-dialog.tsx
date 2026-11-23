@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 import { DialogContent } from "@/components/ui/dialog";
@@ -65,19 +66,21 @@ export function AttendeesDialog({
         {people && people.length > 0 && (
           <ul className="flex flex-col gap-2">
             {people.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center gap-2.5 border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-2"
-              >
-                <Avatar user={p} size={28} />
-                <span className="min-w-0">
-                  <span className="block truncate font-mono text-sm font-bold">@{p.login}</span>
-                  {p.display_name && (
-                    <span className="block truncate text-xs text-[var(--text-muted)]">
-                      {p.display_name}
-                    </span>
-                  )}
-                </span>
+              <li key={p.id}>
+                <Link
+                  href={`/u/${p.login}`}
+                  className="flex items-center gap-2.5 border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-2 transition-colors hover:bg-[var(--surface-2)]"
+                >
+                  <Avatar user={p} size={28} />
+                  <span className="min-w-0">
+                    <span className="block truncate font-mono text-sm font-bold">@{p.login}</span>
+                    {p.display_name && (
+                      <span className="block truncate text-xs text-[var(--text-muted)]">
+                        {p.display_name}
+                      </span>
+                    )}
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>

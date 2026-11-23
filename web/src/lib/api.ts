@@ -14,6 +14,7 @@ import type {
   ContentList,
   ContentSection,
   PostDetail,
+  Profile,
   PostPage,
   PostType,
   RsvpState,
@@ -135,4 +136,11 @@ export const api = {
   contentFileUrl: (section: ContentSection, path: string, download = false) =>
     `${API_BASE}/content/${section}/file?path=${encodeURIComponent(path)}` +
     (download ? "&download=1" : ""),
+
+  /** Own profile when `login` is omitted, otherwise another student's. */
+  getProfile: (login?: string) =>
+    request<Profile>(login ? `/profile/${encodeURIComponent(login)}` : "/profile"),
+
+  searchStudents: (q: string) =>
+    request<UserPublic[]>(`/students?q=${encodeURIComponent(q)}`),
 };

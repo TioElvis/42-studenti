@@ -136,3 +136,40 @@ export interface ContentFile {
   name: string;
   content: string;
 }
+
+export interface ActivityStats {
+  posts: number;
+  comments: number;
+  daje_received: number;
+  rsvps: number;
+  logins: number;
+}
+
+export interface ProjectInfo {
+  name: string;
+  status: string;
+  mark: number | null;
+  validated: boolean | null;
+}
+
+export interface Intra42Info {
+  level: number | null;
+  grade: string | null;
+  correction_point: number | null;
+  wallet: number | null;
+  location: string | null;
+  pool: string | null;
+  joined: string | null;
+  projects: ProjectInfo[];
+  achievements: string[];
+}
+
+export interface Profile {
+  login: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  campus: string | null;
+  is_me: boolean;
+  activity: ActivityStats;
+  intra: Intra42Info;
+}

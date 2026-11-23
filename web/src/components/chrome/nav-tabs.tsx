@@ -10,6 +10,7 @@ const TABS = [
   { href: "/", key: "nav.bacheca" },
   { href: "/comunita", key: "nav.comunita" },
   { href: "/eventi", key: "nav.eventi" },
+  { href: "/studenti", key: "nav.studenti" },
   { href: "/club", key: "nav.club" },
   { href: "/staff", key: "nav.staff" },
   { href: "/materiale", key: "nav.materiale" },
