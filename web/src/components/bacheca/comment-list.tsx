@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { CornerDownRight, Reply, Trash2, X } from "lucide-react";
 
 import { Avatar } from "@/components/chrome/avatar";
@@ -82,7 +83,12 @@ export function CommentList({
               <div className="mb-1 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Avatar user={c.author} size={22} />
-                  <span className="font-mono text-xs font-bold">@{c.author.login}</span>
+                  <Link
+                    href={`/u/${c.author.login}`}
+                    className="font-mono text-xs font-bold hover:underline"
+                  >
+                    @{c.author.login}
+                  </Link>
                   <span className="font-mono text-[11px] text-[var(--text-muted)]">
                     {relativeTime(c.created_at, lang)}
                   </span>

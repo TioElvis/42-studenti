@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 import { DialogContent } from "@/components/ui/dialog";
@@ -196,7 +197,12 @@ export function PostDetailModal({
               <div className="flex items-center gap-2.5">
                 <Avatar user={detail.author} />
                 <div>
-                  <div className="font-mono text-sm font-bold">@{detail.author.login}</div>
+                  <Link
+                  href={`/u/${detail.author.login}`}
+                  className="font-mono text-sm font-bold hover:underline"
+                >
+                  @{detail.author.login}
+                </Link>
                   <div className="font-mono text-[11px] text-[var(--text-muted)]">
                     {relativeTime(detail.created_at, lang)}
                   </div>

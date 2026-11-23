@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { MessageSquare, Pencil, Trash2 } from "lucide-react";
 
 import { Avatar } from "@/components/chrome/avatar";
@@ -55,9 +56,13 @@ export function PostCard({
           <div className="flex items-center gap-2.5">
             <Avatar user={post.author} />
             <div>
-              <div className="font-mono text-sm font-bold">
+              <Link
+                href={`/u/${post.author.login}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-mono text-sm font-bold hover:underline"
+              >
                 {hacker ? `@${post.author.login}` : post.author.login}
-              </div>
+              </Link>
               <div className="font-mono text-[11px] text-[var(--text-muted)]">
                 {relativeTime(post.created_at, lang)}
               </div>
