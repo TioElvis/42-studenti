@@ -45,7 +45,13 @@ class User(Base, TimestampMixin):
 
     # --- Notification preferences ---
     notify_posts: Mapped[PostNotify] = mapped_column(
-        SAEnum(PostNotify, name="post_notify", native_enum=False, length=16),
+        SAEnum(
+            PostNotify,
+            name="post_notify",
+            native_enum=False,
+            length=16,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=False,
         default=PostNotify.FOLLOWED,
         server_default="followed",
