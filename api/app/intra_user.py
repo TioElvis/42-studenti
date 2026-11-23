@@ -28,7 +28,7 @@ from intra42.exceptions import (
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import crypto
-from .config import Settings
+from .config import FORTY_TWO_USER_AGENT, Settings
 from .models.user import User
 
 logger = logging.getLogger("app.intra_user")
@@ -84,7 +84,9 @@ async def _refresh(session: AsyncSession, settings: Settings, user: User) -> str
         "client_id": settings.forty_two_uid,
         "client_secret": settings.forty_two_secret,
     }
-    async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
+    async with httpx.AsyncClient(
+        timeout=_HTTP_TIMEOUT, headers={"User-Agent": FORTY_TWO_USER_AGENT}
+    ) as client:
         resp = await client.post(TOKEN_URL, data=data)
     if resp.status_code != 200:
         logger.warning("42 token refresh failed (status %s)", resp.status_code)

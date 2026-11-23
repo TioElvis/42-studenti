@@ -41,6 +41,12 @@ _IDEMPOTENT_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 # any method, since nothing was sent.
 _NOT_SENT_ERRORS = (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout)
 _MAX_BACKOFF = 8.0
+# A browser-like User-Agent: api.intra.42.fr is behind Cloudflare, which 403s
+# the default httpx UA from datacenter IPs. Sent on every request.
+_USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+)
 
 
 def _backoff_delay(base: float, retry: int) -> float:
@@ -78,7 +84,7 @@ class Client:
         self._config = config or ClientConfig(
             base_url=base_url, timeout=timeout, max_retries=max_retries
         )
-        self._http = httpx.Client(timeout=self._config.timeout)
+        self._http = httpx.Client(timeout=self._config.timeout, headers={"User-Agent": _USER_AGENT})
         # A user (resource-owner) access token authenticates as that user and
         # unlocks user-scoped write endpoints; otherwise authenticate as the
         # application via client-credentials.

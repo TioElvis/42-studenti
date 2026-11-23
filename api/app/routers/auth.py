@@ -22,6 +22,7 @@ from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.responses import RedirectResponse
 
 from .. import intra_user
+from ..config import FORTY_TWO_USER_AGENT
 from ..deps import SessionDep, SettingsDep
 from ..intra_user import TokenBundle
 from ..ratelimit import auth_rate_limiter
@@ -143,7 +144,9 @@ async def _exchange_code(settings, code: str) -> TokenBundle:
         "redirect_uri": settings.forty_two_callback_url,
     }
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(
+            timeout=10.0, headers={"User-Agent": FORTY_TWO_USER_AGENT}
+        ) as client:
             resp = await client.post(TOKEN_URL, data=data)
     except httpx.HTTPError as exc:
         logger.warning("42 token endpoint unreachable: %s", exc)
@@ -167,7 +170,9 @@ async def _exchange_code(settings, code: str) -> TokenBundle:
 
 async def _fetch_profile(token: str) -> IntraProfile:
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(
+            timeout=10.0, headers={"User-Agent": FORTY_TWO_USER_AGENT}
+        ) as client:
             resp = await client.get(ME_URL, headers={"Authorization": f"Bearer {token}"})
     except httpx.HTTPError as exc:
         logger.warning("42 /me endpoint unreachable: %s", exc)
