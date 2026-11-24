@@ -13,6 +13,7 @@ import type {
   ContentFile,
   ContentList,
   ContentSection,
+  NotificationFilter,
   NotificationPage,
   NotificationSettings,
   PostDetail,
@@ -151,8 +152,13 @@ export const api = {
   unfollowUser: (login: string) =>
     request<void>(`/users/${encodeURIComponent(login)}/follow`, { method: "DELETE" }),
 
-  listNotifications: (cursor?: number | null) =>
-    request<NotificationPage>(`/notifications${cursor != null ? `?cursor=${cursor}` : ""}`),
+  listNotifications: (opts: { cursor?: number | null; filter?: NotificationFilter } = {}) => {
+    const p = new URLSearchParams();
+    if (opts.cursor != null) p.set("cursor", String(opts.cursor));
+    if (opts.filter && opts.filter !== "all") p.set("filter", opts.filter);
+    const qs = p.toString();
+    return request<NotificationPage>(`/notifications${qs ? `?${qs}` : ""}`);
+  },
   unreadNotifications: () => request<{ unread: number }>("/notifications/unread-count"),
   markNotificationsRead: () => request<void>("/notifications/read-all", { method: "POST" }),
   getNotificationSettings: () => request<NotificationSettings>("/notifications/settings"),

@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import APIRouter, Query, Response, status
 
 from ..deps import CurrentUser, SessionDep
+from ..models.enums import NotificationType
 from ..schemas.notification import (
     NotificationPage,
     NotificationSettings,
@@ -15,6 +18,14 @@ from ..services import notifications as notif_service
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
+# UI filter tabs -> the notification types they cover (empty = no type filter).
+_FILTER_KINDS: dict[str, set[NotificationType]] = {
+    "all": set(),
+    "posts": {NotificationType.POST},
+    "comments": {NotificationType.COMMENT, NotificationType.REPLY},
+    "follows": {NotificationType.FOLLOW},
+}
+
 
 @router.get("", response_model=NotificationPage)
 async def list_notifications(
@@ -22,9 +33,14 @@ async def list_notifications(
     user: CurrentUser,
     cursor: int | None = Query(default=None, ge=1),
     limit: int = Query(default=20, ge=1, le=50),
+    filter: Literal["all", "posts", "comments", "follows"] = Query(default="all"),
 ) -> NotificationPage:
     return await notif_service.list_notifications(
-        session, user_id=user.id, cursor=cursor, limit=limit
+        session,
+        user_id=user.id,
+        cursor=cursor,
+        limit=limit,
+        kinds=_FILTER_KINDS[filter] or None,
     )
 
 

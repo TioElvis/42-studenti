@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from sqlalchemy import and_, func, or_, select, update
+import time
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -21,6 +24,30 @@ from ..schemas.notification import (
 from ..schemas.user import UserPublic
 
 MAX_PAGE_SIZE = 50
+
+# Notifications older than this are hidden from reads and periodically purged.
+NOTIFICATION_RETENTION_DAYS = 30
+_PURGE_EVERY_SECONDS = 3600.0
+# In-process throttle for the global purge (matches the app's other in-process
+# singletons like the rate limiter / WS manager). Idempotent if it double-runs.
+# Starts far in the past so the first purge runs promptly (``time.monotonic()``
+# can be small just after boot, which a 0.0 start would wrongly throttle).
+_last_purge_monotonic = -1e9
+
+
+def _retention_cutoff() -> datetime:
+    return datetime.now(timezone.utc) - timedelta(days=NOTIFICATION_RETENTION_DAYS)
+
+
+async def _maybe_purge(session: AsyncSession) -> None:
+    """Delete notifications past the retention window, at most once per hour."""
+    global _last_purge_monotonic
+    now = time.monotonic()
+    if now - _last_purge_monotonic < _PURGE_EVERY_SECONDS:
+        return
+    _last_purge_monotonic = now
+    await session.execute(delete(Notification).where(Notification.created_at < _retention_cutoff()))
+    await session.commit()
 
 
 async def create_post_notifications(
@@ -102,16 +129,27 @@ async def create_follow_notification(
 
 
 async def list_notifications(
-    session: AsyncSession, *, user_id: int, cursor: int | None, limit: int
+    session: AsyncSession,
+    *,
+    user_id: int,
+    cursor: int | None,
+    limit: int,
+    kinds: set[NotificationType] | None = None,
 ) -> NotificationPage:
     limit = max(1, min(limit, MAX_PAGE_SIZE))
+    await _maybe_purge(session)
     stmt = (
         select(Notification)
         .options(selectinload(Notification.actor))
-        .where(Notification.recipient_id == user_id)
+        .where(
+            Notification.recipient_id == user_id,
+            Notification.created_at >= _retention_cutoff(),
+        )
         .order_by(Notification.id.desc())
         .limit(limit + 1)
     )
+    if kinds:
+        stmt = stmt.where(Notification.type.in_(kinds))
     if cursor is not None:
         stmt = stmt.where(Notification.id < cursor)
     rows = (await session.execute(stmt)).scalars().all()
@@ -136,7 +174,9 @@ async def list_notifications(
 async def unread_count(session: AsyncSession, user_id: int) -> int:
     count = await session.scalar(
         select(func.count(Notification.id)).where(
-            Notification.recipient_id == user_id, Notification.is_read.is_(False)
+            Notification.recipient_id == user_id,
+            Notification.is_read.is_(False),
+            Notification.created_at >= _retention_cutoff(),
         )
     )
     return int(count or 0)
