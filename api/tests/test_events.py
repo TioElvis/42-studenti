@@ -57,3 +57,44 @@ async def test_events_feed_returns_only_upcoming(client):
     assert data[0]["interested"] is False
 
     deps._events_provider = None  # don't leak the cache into other tests
+
+
+_SCOPE_PAYLOAD = [
+    {
+        "id": 10,
+        "name": "Evento solo Roma",
+        "kind": "event",
+        "begin_at": "2999-01-01T10:00:00.000Z",
+        "end_at": "2999-01-01T12:00:00.000Z",
+        "campus_ids": [61],
+    },
+    {
+        "id": 11,
+        "name": "Conferenza multi-campus",
+        "kind": "conference",
+        "begin_at": "2999-01-02T10:00:00.000Z",
+        "end_at": "2999-01-02T12:00:00.000Z",
+        "campus_ids": [61, 9, 14],
+    },
+]
+
+
+async def test_events_internal_external_flag(client):
+    deps._events_provider = None
+    with respx.mock(assert_all_called=False) as mock:
+        mock.post("https://api.intra.42.fr/oauth/token").mock(
+            return_value=Response(200, json={"access_token": "app-token", "expires_in": 7200})
+        )
+        mock.route(
+            method="GET", url__startswith="https://api.intra.42.fr/v2/campus/61/events"
+        ).mock(return_value=Response(200, json=_SCOPE_PAYLOAD))
+        mock.route(
+            method="GET", url__startswith="https://api.intra.42.fr/v2/events_users"
+        ).mock(return_value=Response(200, json=[]))
+        resp = await client.get("/events")
+
+    assert resp.status_code == 200
+    internal_by_id = {e["id"]: e["internal"] for e in resp.json()}
+    assert internal_by_id == {10: True, 11: False}  # single-campus vs multi-campus
+
+    deps._events_provider = None

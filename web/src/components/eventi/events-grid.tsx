@@ -8,6 +8,7 @@ import { Window, WindowBar } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EventDetailModal } from "./event-detail-modal";
+import { EventScopeBadge } from "./event-scope-badge";
 import { api, ApiError } from "@/lib/api";
 import { useRealtime } from "@/providers/realtime";
 import { useI18n } from "@/providers/i18n-provider";
@@ -147,9 +148,12 @@ function EventCard({
           <span className="font-mono text-[10px] text-[var(--text-muted)]">{d.month}</span>
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-display text-base font-bold leading-tight">
-            {event.name ?? t("eventi.eventFallback")}
-          </h3>
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-display text-base font-bold leading-tight">
+              {event.name ?? t("eventi.eventFallback")}
+            </h3>
+            <EventScopeBadge internal={event.internal} />
+          </div>
           {event.description && (
             <p className="mt-1 line-clamp-2 text-xs text-[var(--text-muted)]">
               {event.description}

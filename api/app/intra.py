@@ -234,7 +234,7 @@ class EventsProvider:
 
         now_ts = time.time()
         upcoming = [
-            _to_out(e)
+            _to_out(e, campus_id)
             for e in raw
             if e.end_at is None or e.end_at.timestamp() >= now_ts
         ]
@@ -348,7 +348,11 @@ class EventsProvider:
         )
 
 
-def _to_out(event: Event) -> EventOut:
+def _to_out(event: Event, campus_id: int) -> EventOut:
+    # Internal = scoped to our campus only; a multi-campus event (the feed also
+    # surfaces shared online/partner events spanning several campuses) is external.
+    campus_ids = event.campus_ids or []
+    internal = not campus_ids or set(campus_ids) <= {campus_id}
     return EventOut(
         id=event.id,
         name=event.name,
@@ -359,4 +363,5 @@ def _to_out(event: Event) -> EventOut:
         end_at=event.end_at,
         max_people=event.max_people,
         nbr_subscribers=event.nbr_subscribers,
+        internal=internal,
     )

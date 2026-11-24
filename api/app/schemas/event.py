@@ -17,6 +17,9 @@ class EventOut(BaseModel):
     end_at: datetime | None = None
     max_people: int | None = None
     nbr_subscribers: int | None = None
+    # True when the event is scoped to the 42 Roma campus only; False for a
+    # multi-campus / shared event (online, partner, cross-campus).
+    internal: bool = True
     # Local "Mi interessa" RSVP state (our DB, per viewer + total).
     interested: bool = False
     interest_count: int = 0
