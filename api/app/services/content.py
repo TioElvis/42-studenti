@@ -12,7 +12,12 @@ Any file type is listed. Text files are returned inline (JSON); binary files
 
 from __future__ import annotations
 
+import asyncio
+import time
+from dataclasses import dataclass
 from pathlib import Path
+
+import httpx
 
 from ..config import Settings
 from ..schemas.content import ContentEntry, ContentFile, ContentList
@@ -128,3 +133,198 @@ def resolve_file(settings: Settings, section: str, rel: str) -> tuple[Path, str]
     if target.stat().st_size > _MAX_FILE_BYTES:
         raise NotFoundError("File too large")
     return target, _mime_for(target.suffix.lower())
+
+
+# ---------------------------------------------------------------------------
+# GitHub-backed source (optional): read content live from a repo's assets/ so
+# a push/merge updates the site without a redeploy. Falls back to the local
+# source on any availability error; a genuine 404 propagates as NotFoundError.
+# ---------------------------------------------------------------------------
+
+_GITHUB_API = "https://api.github.com"
+_GITHUB_RAW = "https://raw.githubusercontent.com"
+_GH_UA = "42-studenti"  # GitHub requires a User-Agent; generic app name, no PII.
+
+
+@dataclass
+class FilePayload:
+    """A file to stream: either a local path or in-memory bytes (GitHub)."""
+
+    name: str
+    media_type: str
+    path: Path | None = None
+    data: bytes | None = None
+
+
+class _GitHubUnavailable(Exception):
+    """GitHub couldn't be reached / returned an unexpected status → fall back."""
+
+
+# Per-section tree-listing cache (TTL). File bytes come from raw.* (uncached
+# here; the browser caches them via Cache-Control).
+_gh_tree_cache: dict[str, tuple[float, ContentList]] = {}
+_gh_lock = asyncio.Lock()
+
+
+def invalidate_github_cache(section: str | None = None) -> None:
+    """Drop the cached listing (used after a direct push in Step 11)."""
+    if section is None:
+        _gh_tree_cache.clear()
+    else:
+        _gh_tree_cache.pop(section, None)
+
+
+def _github_enabled(settings: Settings) -> bool:
+    return bool(getattr(settings, "github_repo", ""))
+
+
+def _suffix_of(name: str) -> str:
+    return f".{name.rsplit('.', 1)[-1].lower()}" if "." in name else ""
+
+
+def _safe_rel(rel: str) -> str:
+    """Confine a GitHub-bound relative path to the section (no traversal)."""
+    cleaned = rel.strip().lstrip("/")
+    segments = cleaned.split("/")
+    if not cleaned or any(seg in ("", "..") or seg.startswith(".") for seg in segments):
+        raise NotFoundError("File not found")
+    return cleaned
+
+
+def _gh_headers(settings: Settings, *, api: bool) -> dict[str, str]:
+    headers = {"User-Agent": _GH_UA}
+    if api:
+        headers["Accept"] = "application/vnd.github+json"
+        headers["X-GitHub-Api-Version"] = "2022-11-28"
+    token = getattr(settings, "github_token", "")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+async def _gh_listing(settings: Settings, section: str) -> ContentList:
+    ttl = getattr(settings, "github_cache_ttl", 300)
+    cached = _gh_tree_cache.get(section)
+    if cached and time.monotonic() - cached[0] < ttl:
+        return cached[1]
+    async with _gh_lock:
+        cached = _gh_tree_cache.get(section)
+        if cached and time.monotonic() - cached[0] < ttl:
+            return cached[1]
+        repo = settings.github_repo
+        branch = getattr(settings, "github_branch", "main")
+        url = f"{_GITHUB_API}/repos/{repo}/git/trees/{branch}?recursive=1"
+        try:
+            async with httpx.AsyncClient(
+                timeout=10.0, headers=_gh_headers(settings, api=True)
+            ) as client:
+                resp = await client.get(url)
+        except httpx.HTTPError as exc:
+            raise _GitHubUnavailable() from exc
+        if resp.status_code != 200:
+            raise _GitHubUnavailable()
+        prefix = f"assets/{SECTIONS[section]}/"
+        entries: list[ContentEntry] = []
+        for item in resp.json().get("tree") or []:
+            if item.get("type") != "blob":
+                continue
+            path = item.get("path", "")
+            if not path.startswith(prefix):
+                continue
+            rel = path[len(prefix):]
+            segments = rel.split("/")
+            if not rel or any(seg.startswith(".") for seg in segments):
+                continue
+            name = segments[-1]
+            folder = "/".join(segments[:-1])
+            suffix = _suffix_of(name)
+            entries.append(
+                ContentEntry(
+                    path=rel,
+                    name=name,
+                    folder=folder,
+                    size=int(item.get("size") or 0),
+                    kind=_kind_for(suffix),
+                    mime=_mime_for(suffix),
+                )
+            )
+        entries.sort(key=lambda e: e.path)
+        result = ContentList(section=section, entries=entries)
+        _gh_tree_cache[section] = (time.monotonic(), result)
+        return result
+
+
+async def _gh_fetch_raw(settings: Settings, section: str, rel: str) -> bytes:
+    repo = settings.github_repo
+    branch = getattr(settings, "github_branch", "main")
+    url = f"{_GITHUB_RAW}/{repo}/{branch}/assets/{SECTIONS[section]}/{rel}"
+    try:
+        async with httpx.AsyncClient(
+            timeout=10.0, headers=_gh_headers(settings, api=False), follow_redirects=True
+        ) as client:
+            resp = await client.get(url)
+    except httpx.HTTPError as exc:
+        raise _GitHubUnavailable() from exc
+    if resp.status_code == 404:
+        raise NotFoundError("File not found")
+    if resp.status_code != 200:
+        raise _GitHubUnavailable()
+    return resp.content
+
+
+async def _gh_text(settings: Settings, section: str, rel: str) -> ContentFile:
+    safe = _safe_rel(rel)
+    if _suffix_of(safe.rsplit("/", 1)[-1]) not in _TEXT_EXT:
+        raise NotFoundError("This file type can't be shown as text")
+    data = await _gh_fetch_raw(settings, section, safe)
+    if len(data) > _MAX_TEXT_BYTES:
+        raise NotFoundError("File too large to display")
+    return ContentFile(
+        path=safe, name=safe.rsplit("/", 1)[-1], content=data.decode("utf-8", errors="replace")
+    )
+
+
+async def _gh_file(settings: Settings, section: str, rel: str) -> FilePayload:
+    safe = _safe_rel(rel)
+    data = await _gh_fetch_raw(settings, section, safe)
+    if len(data) > _MAX_FILE_BYTES:
+        raise NotFoundError("File too large")
+    name = safe.rsplit("/", 1)[-1]
+    return FilePayload(name=name, media_type=_mime_for(_suffix_of(name)), data=data)
+
+
+# --- Public async orchestrators (GitHub when configured, else local) --------
+
+
+async def get_listing(settings: Settings, section: str) -> ContentList:
+    if section not in SECTIONS:
+        raise NotFoundError("Unknown content section")
+    if _github_enabled(settings):
+        try:
+            return await _gh_listing(settings, section)
+        except _GitHubUnavailable:
+            pass  # fall back to the local tree
+    return list_entries(settings, section)
+
+
+async def get_text(settings: Settings, section: str, rel: str) -> ContentFile:
+    if section not in SECTIONS:
+        raise NotFoundError("Unknown content section")
+    if _github_enabled(settings):
+        try:
+            return await _gh_text(settings, section, rel)
+        except _GitHubUnavailable:
+            pass
+    return read_file(settings, section, rel)
+
+
+async def get_file(settings: Settings, section: str, rel: str) -> FilePayload:
+    if section not in SECTIONS:
+        raise NotFoundError("Unknown content section")
+    if _github_enabled(settings):
+        try:
+            return await _gh_file(settings, section, rel)
+        except _GitHubUnavailable:
+            pass
+    path, mime = resolve_file(settings, section, rel)
+    return FilePayload(name=path.name, media_type=mime, path=path)

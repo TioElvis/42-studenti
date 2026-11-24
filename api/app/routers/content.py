@@ -41,7 +41,7 @@ async def list_content(
     user: CurrentUser,
 ) -> ContentList:
     """List the files under a section (``material`` or ``archive``)."""
-    result = content_service.list_entries(settings, section)
+    result = await content_service.get_listing(settings, section)
     response.headers["Cache-Control"] = f"private, max-age={settings.http_cache_seconds}"
     return result
 
@@ -55,7 +55,7 @@ async def read_content(
     path: str = Query(..., min_length=1, max_length=512),
 ) -> ContentFile:
     """Return one text document's content (path is confined to the section root)."""
-    result = content_service.read_file(settings, section, path)
+    result = await content_service.get_text(settings, section, path)
     response.headers["Cache-Control"] = f"private, max-age={settings.http_cache_seconds}"
     return result
 
@@ -67,14 +67,15 @@ async def serve_file(
     user: CurrentUser,
     path: str = Query(..., min_length=1, max_length=512),
     download: bool = Query(False),
-) -> FileResponse:
+) -> Response:
     """Stream a file of any type. Images/PDFs are served inline (so the UI can
     render them); other types, or ``download=1``, are sent as an attachment."""
-    target, mime = content_service.resolve_file(settings, section, path)
+    payload = await content_service.get_file(settings, section, path)
+    mime = payload.media_type
     inline = (not download) and (mime in _INLINE_MIME)
     headers: dict[str, str] = {
         "Content-Disposition": _content_disposition(
-            "inline" if inline else "attachment", target.name
+            "inline" if inline else "attachment", payload.name
         ),
         "X-Content-Type-Options": "nosniff",
     }
@@ -85,4 +86,7 @@ async def serve_file(
         headers["Content-Security-Policy"] = f"frame-ancestors 'self' {settings.frontend_url}"
     else:
         headers["Content-Security-Policy"] = "default-src 'none'"
-    return FileResponse(target, media_type=mime, headers=headers)
+    # Local file → FileResponse (efficient); GitHub bytes → in-memory Response.
+    if payload.path is not None:
+        return FileResponse(payload.path, media_type=mime, headers=headers)
+    return Response(content=payload.data or b"", media_type=mime, headers=headers)

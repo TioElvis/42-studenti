@@ -82,6 +82,15 @@ class Settings(BaseSettings):
     # Client/proxy cache lifetime (seconds) for cacheable GET responses.
     http_cache_seconds: int = Field(default=60, alias="HTTP_CACHE_SECONDS")
 
+    # --- Optional: serve Materiale/Archivio live from a GitHub repo ---
+    # When GITHUB_REPO is set (e.g. "TioElvis/42-studenti"), content is read
+    # from that repo's assets/ via the GitHub API (public repo = no token
+    # needed); otherwise it falls back to the local assets_dir.
+    github_repo: str = Field(default="", alias="GITHUB_REPO")
+    github_branch: str = Field(default="main", alias="GITHUB_BRANCH")
+    github_token: str = Field(default="", alias="GITHUB_TOKEN")  # optional
+    github_cache_ttl: int = Field(default=300, alias="GITHUB_CACHE_TTL")
+
     @field_validator("cookie_samesite")
     @classmethod
     def _valid_samesite(cls, v: str) -> str:
