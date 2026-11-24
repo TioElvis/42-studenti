@@ -63,7 +63,7 @@ export function NotificationBell() {
         {unread > 0 && (
           <span
             aria-hidden
-            className="pointer-events-none absolute -right-1.5 -top-1.5 min-w-[18px] border border-[var(--border)] bg-[var(--primary)] px-1 text-center font-mono text-[10px] font-bold leading-[16px] text-[var(--primary-fg)]"
+            className="pointer-events-none absolute -right-1.5 -top-1.5 min-w-[18px] border border-[var(--border)] bg-[var(--primary)] px-1 text-center font-mono text-[10px] font-bold leading-[16px] text-[var(--primary-fg)] rounded-[var(--radius-pill)]"
           >
             {unread > 99 ? "99+" : unread}
           </span>

@@ -16,7 +16,7 @@ import type { GithubStatus, Profile, ProjectInfo } from "@/lib/types";
 
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-3 text-center">
+    <div className="border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-3 text-center rounded-[var(--radius-inner)]">
       <div className="font-display text-2xl font-bold tabular-nums">{value}</div>
       <div className="mt-0.5 font-mono text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
         {label}
@@ -220,7 +220,7 @@ export function ProfileView({ login }: { login: string }) {
                   return (
                     <li
                       key={p.name}
-                      className="flex items-center justify-between gap-2 border border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-3 py-2 font-mono text-sm"
+                      className="flex items-center justify-between gap-2 border border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-3 py-2 font-mono text-sm rounded-[var(--radius-inner)]"
                     >
                       <span className="min-w-0 truncate font-bold">{p.name}</span>
                       <span className={cn("shrink-0 text-xs", s.cls)}>{s.text}</span>
@@ -240,7 +240,7 @@ export function ProfileView({ login }: { login: string }) {
                 {profile.intra.achievements.map((a) => (
                   <span
                     key={a}
-                    className="border border-[var(--border-subtle)] bg-[var(--surface-2)] px-2 py-0.5 font-mono text-[11px]"
+                    className="border border-[var(--border-subtle)] bg-[var(--surface-2)] px-2 py-0.5 font-mono text-[11px] rounded-[var(--radius-pill)]"
                   >
                     {a}
                   </span>

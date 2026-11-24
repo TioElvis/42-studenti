@@ -3,36 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>42 Studenti — Design System Moderno (Dark)</title>
+    <title>42 Studenti — Design System Bento Hacker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet" />
     <style>
       :root {
-        --bg-canvas: #0b0d12;
-        --surface-card: #12151e;
-        --surface-subtle: #1a1f2c;
-        --border-hairline: #1f2636;
-        --border-hover: #323d56;
-        --text-primary: #f8fafc;
-        --text-secondary: #94a3b8;
-        --brand-primary: #f43f5e;
-        --brand-primary-hover: #e11d48;
-        --brand-soft: rgba(244, 63, 94, 0.14);
-        --accent-emerald: #34d399;
-        --accent-emerald-soft: rgba(52, 211, 153, 0.14);
-        --accent-indigo: #818cf8;
-        --accent-indigo-soft: rgba(129, 140, 248, 0.14);
-        --accent-amber: #fbbf24;
-        --accent-amber-soft: rgba(251, 191, 36, 0.12);
-        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+        --bg-canvas: #080a0c;
+        --surface-card: #0f1317;
+        --surface-subtle: #161c22;
+        --border-hairline: #1e282d;
+        --border-hover: rgba(0, 255, 136, 0.42);
+        --text-primary: #ecf2ee;
+        --text-secondary: #7f918a;
+        --brand-primary: #e63946;
+        --brand-primary-hover: #ff4757;
+        --brand-soft: rgba(230, 57, 70, 0.14);
+        --hacker-green: #00ff88;
+        --hacker-green-soft: rgba(0, 255, 136, 0.12);
+        --accent-cyan: #00e5ff;
+        --accent-cyan-soft: rgba(0, 229, 255, 0.12);
+        --accent-amber: #ffb703;
+        --accent-amber-soft: rgba(255, 183, 3, 0.12);
+        --accent-purple: #c084fc;
+        --accent-purple-soft: rgba(192, 132, 252, 0.14);
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
         --shadow-md:
-          0 8px 20px -4px rgba(0, 0, 0, 0.45), 0 2px 6px -2px rgba(0, 0, 0, 0.3);
+          0 8px 22px -4px rgba(0, 0, 0, 0.55),
+          0 2px 6px -2px rgba(0, 0, 0, 0.35);
         --shadow-lg:
-          0 20px 38px -10px rgba(0, 0, 0, 0.65),
-          0 4px 12px -2px rgba(0, 0, 0, 0.4);
+          0 20px 40px -10px rgba(0, 0, 0, 0.7),
+          0 0 24px -6px rgba(0, 255, 136, 0.16);
       }
 
       * {
@@ -41,11 +44,19 @@
 
       body {
         background-color: var(--bg-canvas);
-        background-image: radial-gradient(
-          ellipse 80% 50% at 50% -10%,
-          rgba(244, 63, 94, 0.11) 0%,
-          transparent 65%
-        );
+        background-image:
+          radial-gradient(
+            ellipse 75% 45% at 50% -10%,
+            rgba(0, 255, 136, 0.08) 0%,
+            rgba(230, 57, 70, 0.06) 40%,
+            transparent 70%
+          ),
+          linear-gradient(rgba(0, 255, 136, 0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 255, 136, 0.025) 1px, transparent 1px);
+        background-size:
+          100% 100%,
+          28px 28px,
+          28px 28px;
         color: var(--text-primary);
         font-family:
           "Plus Jakarta Sans",
@@ -60,12 +71,12 @@
         font-family: "JetBrains Mono", monospace;
       }
 
-      /* Navbar Glassmorphism Dark */
+      /* Navbar Glassmorphism Hacker */
       .navbar {
         position: sticky;
         top: 0;
         z-index: 50;
-        background: rgba(11, 13, 18, 0.78);
+        background: rgba(8, 10, 12, 0.8);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
         border-bottom: 1px solid var(--border-hairline);
@@ -79,6 +90,7 @@
         justify-content: space-between;
         align-items: center;
         gap: 16px;
+        flex-wrap: wrap;
       }
 
       .brand {
@@ -91,15 +103,16 @@
         width: 38px;
         height: 38px;
         border-radius: 10px;
-        background: linear-gradient(135deg, #1e2433 0%, #12151e 100%);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        color: #ffffff;
-        font-weight: 800;
-        font-size: 16px;
+        background: linear-gradient(135deg, #121917 0%, #0b0f0e 100%);
+        border: 1px solid rgba(0, 255, 136, 0.35);
+        color: var(--hacker-green);
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 700;
+        font-size: 15px;
         display: grid;
         place-items: center;
-        letter-spacing: -0.03em;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        letter-spacing: -0.04em;
+        box-shadow: 0 0 14px rgba(0, 255, 136, 0.18);
       }
 
       .brand-name {
@@ -113,40 +126,40 @@
 
       .version-pill {
         font-size: 11px;
-        font-weight: 500;
+        font-weight: 600;
         padding: 2px 8px;
         border-radius: 999px;
-        background: var(--brand-soft);
-        color: var(--brand-primary);
-        border: 1px solid rgba(244, 63, 94, 0.25);
+        background: var(--hacker-green-soft);
+        color: var(--hacker-green);
+        border: 1px solid rgba(0, 255, 136, 0.25);
       }
 
       .brand-sub {
-        font-size: 12px;
+        font-size: 11.5px;
         color: var(--text-secondary);
       }
 
       .status-pill {
         background: var(--surface-card);
-        border: 1px solid var(--border-hairline);
+        border: 1px solid rgba(0, 255, 136, 0.28);
         border-radius: 999px;
         padding: 6px 14px;
-        font-size: 12px;
+        font-size: 11.5px;
         font-weight: 600;
-        color: var(--text-primary);
+        color: var(--hacker-green);
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        box-shadow: var(--shadow-sm);
+        box-shadow: 0 0 16px rgba(0, 255, 136, 0.1);
       }
 
       .dot {
         width: 8px;
         height: 8px;
-        background: var(--accent-emerald);
+        background: var(--hacker-green);
         border-radius: 50%;
-        box-shadow: 0 0 8px rgba(52, 211, 153, 0.65);
-        animation: pulse 2s infinite;
+        box-shadow: 0 0 10px var(--hacker-green);
+        animation: pulse 1.6s infinite;
       }
 
       @keyframes pulse {
@@ -156,9 +169,25 @@
           opacity: 1;
         }
         50% {
-          transform: scale(0.9);
-          opacity: 0.6;
+          transform: scale(0.88);
+          opacity: 0.45;
         }
+      }
+
+      @keyframes blink {
+        0%,
+        49% {
+          opacity: 1;
+        }
+        50%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      .cursor {
+        color: var(--hacker-green);
+        animation: blink 0.95s infinite;
       }
 
       .container {
@@ -177,9 +206,9 @@
         gap: 6px;
         font-size: 12px;
         font-weight: 600;
-        color: var(--brand-primary);
-        background: var(--brand-soft);
-        border: 1px solid rgba(244, 63, 94, 0.24);
+        color: var(--hacker-green);
+        background: var(--hacker-green-soft);
+        border: 1px solid rgba(0, 255, 136, 0.24);
         padding: 5px 12px;
         border-radius: 999px;
         margin-bottom: 14px;
@@ -191,7 +220,7 @@
         letter-spacing: -0.03em;
         margin: 0 0 10px 0;
         line-height: 1.15;
-        background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+        background: linear-gradient(180deg, #ffffff 0%, #b8cbc2 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
       }
@@ -199,7 +228,7 @@
       .hero-desc {
         color: var(--text-secondary);
         font-size: 16px;
-        max-width: 620px;
+        max-width: 640px;
         line-height: 1.6;
         margin: 0;
       }
@@ -218,6 +247,9 @@
         font-weight: 700;
         letter-spacing: -0.02em;
         margin: 0 0 4px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
 
       .section-desc {
@@ -250,7 +282,7 @@
 
       .swatch-card:hover {
         transform: translateY(-3px);
-        background: #151924;
+        background: #13191e;
         box-shadow: var(--shadow-lg);
         border-color: var(--border-hover);
       }
@@ -267,9 +299,9 @@
       }
 
       .token-chip {
-        background: rgba(11, 13, 18, 0.78);
+        background: rgba(8, 10, 12, 0.82);
         backdrop-filter: blur(8px);
-        color: #f8fafc;
+        color: var(--text-primary);
         border: 1px solid rgba(255, 255, 255, 0.12);
         font-size: 11px;
         font-weight: 500;
@@ -278,8 +310,8 @@
       }
 
       .copy-icon {
-        background: #ffffff;
-        color: #0b0d12;
+        background: var(--hacker-green);
+        color: #080a0c;
         font-size: 11px;
         font-weight: 700;
         padding: 3px 8px;
@@ -314,7 +346,7 @@
       .swatch-hex {
         font-size: 12px;
         font-weight: 600;
-        color: var(--brand-primary);
+        color: var(--hacker-green);
       }
 
       .swatch-role {
@@ -342,6 +374,11 @@
         border-radius: 20px;
         padding: 24px;
         box-shadow: var(--shadow-md);
+        transition: border-color 0.2s ease;
+      }
+
+      .bento-card:hover {
+        border-color: rgba(0, 255, 136, 0.25);
       }
 
       .post-header {
@@ -361,22 +398,24 @@
         width: 40px;
         height: 40px;
         border-radius: 12px;
-        background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
-        color: #ffffff;
+        background: linear-gradient(135deg, #064e3b 0%, #0f172a 100%);
+        border: 1px solid rgba(0, 255, 136, 0.35);
+        color: var(--hacker-green);
         font-weight: 700;
         font-size: 13px;
         display: grid;
         place-items: center;
-        box-shadow: 0 4px 12px rgba(244, 63, 94, 0.28);
+        box-shadow: 0 0 14px rgba(0, 255, 136, 0.16);
       }
 
       .author-name {
         font-weight: 700;
         font-size: 14px;
+        color: var(--hacker-green);
       }
 
       .author-meta {
-        font-size: 12px;
+        font-size: 11.5px;
         color: var(--text-secondary);
       }
 
@@ -390,28 +429,28 @@
         gap: 5px;
       }
 
-      .pill-emerald {
-        background: var(--accent-emerald-soft);
-        color: var(--accent-emerald);
-        border: 1px solid rgba(52, 211, 153, 0.22);
+      .pill-green {
+        background: var(--hacker-green-soft);
+        color: var(--hacker-green);
+        border: 1px solid rgba(0, 255, 136, 0.24);
       }
 
-      .pill-indigo {
-        background: var(--accent-indigo-soft);
-        color: var(--accent-indigo);
-        border: 1px solid rgba(129, 140, 248, 0.22);
+      .pill-cyan {
+        background: var(--accent-cyan-soft);
+        color: var(--accent-cyan);
+        border: 1px solid rgba(0, 229, 255, 0.24);
       }
 
-      .pill-rose {
-        background: var(--brand-soft);
-        color: var(--brand-primary);
-        border: 1px solid rgba(244, 63, 94, 0.22);
+      .pill-amber {
+        background: var(--accent-amber-soft);
+        color: var(--accent-amber);
+        border: 1px solid rgba(255, 183, 3, 0.24);
       }
 
       .post-text {
         font-size: 15px;
         line-height: 1.65;
-        color: #e2e8f0;
+        color: #dce6e0;
         margin: 0 0 20px 0;
       }
 
@@ -419,10 +458,10 @@
         font-family: "JetBrains Mono", monospace;
         font-size: 13px;
         background: var(--surface-subtle);
-        border: 1px solid var(--border-hairline);
+        border: 1px solid rgba(0, 229, 255, 0.22);
         padding: 2px 7px;
         border-radius: 6px;
-        color: var(--accent-indigo);
+        color: var(--accent-cyan);
         font-weight: 500;
       }
 
@@ -439,24 +478,24 @@
       .btn-primary {
         background: var(--brand-primary);
         color: #ffffff;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.14);
         border-radius: 10px;
         padding: 9px 16px;
         font-family: inherit;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35);
+        box-shadow: 0 4px 16px rgba(230, 57, 70, 0.36);
         transition: all 0.15s ease;
       }
 
       .btn-primary:hover {
         background: var(--brand-primary-hover);
         transform: translateY(-1px);
-        box-shadow: 0 6px 18px rgba(244, 63, 94, 0.45);
+        box-shadow: 0 6px 20px rgba(230, 57, 70, 0.48);
       }
 
       .btn-primary:active {
@@ -472,21 +511,21 @@
       .notice-card {
         background: linear-gradient(
           180deg,
-          rgba(251, 191, 36, 0.11) 0%,
-          rgba(18, 21, 30, 0.95) 100%
+          rgba(255, 183, 3, 0.11) 0%,
+          rgba(15, 19, 23, 0.96) 100%
         );
-        border: 1px solid rgba(251, 191, 36, 0.26);
+        border: 1px solid rgba(255, 183, 3, 0.28);
         border-radius: 20px;
         padding: 20px;
         box-shadow: var(--shadow-sm);
       }
 
       .notice-title {
-        font-size: 12px;
+        font-size: 11.5px;
         font-weight: 700;
         color: var(--accent-amber);
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.05em;
         margin-bottom: 8px;
         display: flex;
         align-items: center;
@@ -496,18 +535,18 @@
       .notice-body {
         font-size: 13.5px;
         line-height: 1.55;
-        color: #e2e8f0;
+        color: #dce6e0;
         margin: 0;
       }
 
       .code-card {
-        background: #080a0e;
+        background: #060809;
         color: #cbd5e1;
         border: 1px solid var(--border-hairline);
         border-radius: 20px;
         padding: 20px;
         font-size: 12px;
-        line-height: 1.7;
+        line-height: 1.75;
         box-shadow: var(--shadow-md);
       }
 
@@ -515,7 +554,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        color: #64748b;
+        color: var(--text-secondary);
         font-size: 11px;
         margin-bottom: 10px;
         padding-bottom: 8px;
@@ -527,14 +566,16 @@
         position: fixed;
         bottom: 24px;
         right: 24px;
-        background: #1a1f2c;
-        color: #f8fafc;
-        border: 1px solid var(--border-hover);
+        background: #0f1317;
+        color: var(--text-primary);
+        border: 1px solid rgba(0, 255, 136, 0.45);
         padding: 12px 18px;
         border-radius: 12px;
         font-size: 13px;
         font-weight: 500;
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+        box-shadow:
+          0 12px 28px rgba(0, 0, 0, 0.65),
+          0 0 18px rgba(0, 255, 136, 0.18);
         display: flex;
         align-items: center;
         gap: 8px;
@@ -555,30 +596,37 @@
     <nav class="navbar">
       <div class="navbar-inner">
         <div class="brand">
-          <div class="logo-badge">42</div>
+          <div class="logo-badge">42_</div>
           <div>
             <div class="brand-name">
               42 Studenti
-              <span class="version-pill mono">v3.0 Dark</span>
+              <span class="version-pill mono">v3.0 Bento Hacker</span>
             </div>
-            <div class="brand-sub">Design System &amp; Palette Roma</div>
+            <div class="brand-sub mono">
+              SPQR // Cluster Roma · 41.90411° N, 12.549614° E
+            </div>
           </div>
         </div>
-        <div class="status-pill">
+        <div class="status-pill mono">
           <span class="dot"></span>
-          <span>Campus Roma Online</span>
+          <span>NODE_ONLINE :: 42_SYNC</span>
         </div>
       </div>
     </nav>
 
     <main class="container">
       <section class="hero">
-        <div class="eyebrow">✦ Sistema Visivo Contemporaneo · Dark</div>
-        <h1>Chiarezza notturna,<br />anima romana e spirito 42.</h1>
+        <div class="eyebrow mono">✦ SPQR // Sistema Visivo Tattico</div>
+        <h1>
+          Architettura Bento,<br />fosforo 42 e sangue romano<span
+            class="cursor"
+            >_</span
+          >
+        </h1>
         <p class="hero-desc">
-          Versione scura ad alto comfort visivo costruita su superfici
-          ossidiana, bordi luminosi sottili e accenti cremisi pensati per il
-          cluster di 42 Roma.
+          L’evoluzione contemporanea di SPQR Hacker: griglie Bento arrotondate,
+          superfici ossidiana, bagliori verde fosforo e cremisi imperiale
+          pensati per le sessioni notturne in cluster.
         </p>
       </section>
 
@@ -597,8 +645,8 @@
         <div>
           <h2>Anteprima Componenti</h2>
           <p class="section-desc">
-            Come appaiono post della bacheca, badge di categoria e avvisi in
-            modalità scura.
+            Come appaiono post della bacheca, tag tecnici e broadcast di sistema
+            in modalità Bento Hacker.
           </p>
         </div>
       </div>
@@ -609,55 +657,55 @@
             <div class="author">
               <div class="avatar mono">GV</div>
               <div>
-                <div class="author-name">@gverdi</div>
-                <div class="author-meta">Cluster 2 · 12 minuti fa</div>
+                <div class="author-name mono">@gverdi</div>
+                <div class="author-meta mono">
+                  Cluster 2 · 41.90411° N · 12m fa
+                </div>
               </div>
             </div>
-            <span class="pill pill-emerald">● Studio</span>
+            <span class="pill pill-green mono">● Studio</span>
           </div>
 
           <p class="post-text">
-            Qualcuno in cluster per una sessione di peer learning su
-            <span class="code-inline">minishell</span>? Sto sistemando la
-            gestione dei pipe annidati. Ci vediamo alle 15:00 vicino alle
-            macchinette, porto i biscotti!
+            Qualcuno in cluster per debuggare
+            <span class="code-inline">minishell</span>? Ho segfault sui pipe
+            annidati. Ci vediamo alle 15:00 alle macchinette, offro caffè!
           </p>
 
           <div class="post-footer">
             <button class="btn-primary" id="likeBtn" onclick="toggleLike()">
-              ♥ Daje! <span id="likeCount">14</span>
+              ♥ Daje! <span class="mono" id="likeCount">14</span>
             </button>
             <div style="display: flex; gap: 8px; flex-wrap: wrap">
-              <span class="pill pill-indigo">#PeerLearning</span>
-              <span class="pill pill-rose">Evento casuale</span>
+              <span class="pill pill-cyan mono">#PeerLearning</span>
+              <span class="pill pill-amber">Evento casuale</span>
             </div>
           </div>
         </article>
 
         <div class="side-stack">
           <div class="notice-card">
-            <div class="notice-title">📌 Messaggio Fissato</div>
+            <div class="notice-title mono">📌 Broadcast di Sistema</div>
             <p class="notice-body">
-              Benvenuti nello spazio degli studenti di 42 Roma! Un punto di
-              incontro per organizzare gruppi di studio, condividere risorse e
-              vivere il campus insieme.
+              Benvenuti nel network degli studenti di 42 Roma. Nessun admin,
+              solo peer-to-peer learning, codice e community.
             </p>
           </div>
 
           <div class="code-card mono">
             <div class="code-header">
-              <span>tokens.dark.css</span>
+              <span>tokens.bento-hacker.css</span>
               <span>CSS Variables</span>
             </div>
             <div>
               <span style="color: #64748b">--bg-canvas:</span>
-              <span style="color: #38bdf8">#0B0D12</span>;<br />
-              <span style="color: #64748b">--surface-card:</span>
-              <span style="color: #a5b4fc">#12151E</span>;<br />
+              <span style="color: #38bdf8">#080A0C</span>;<br />
+              <span style="color: #64748b">--hacker-green:</span>
+              <span style="color: #00ff88">#00FF88</span>;<br />
               <span style="color: #64748b">--brand-primary:</span>
-              <span style="color: #fb7185">#F43F5E</span>;<br />
-              <span style="color: #64748b">--accent-emerald:</span>
-              <span style="color: #34d399">#34D399</span>;
+              <span style="color: #ff4757">#E63946</span>;<br />
+              <span style="color: #64748b">--accent-cyan:</span>
+              <span style="color: #00e5ff">#00E5FF</span>;
             </div>
           </div>
         </div>
@@ -665,77 +713,77 @@
     </main>
 
     <div class="toast" id="toast">
-      <span style="color: #34d399">✓</span>
+      <span class="mono" style="color: var(--hacker-green)">&gt;</span>
       <span id="toastMsg">Copiato negli appunti</span>
     </div>
 
     <script>
       const colors = [
         {
-          name: "Ossidiana Profonda",
-          hex: "#0B0D12",
+          name: "Ossidiana Void",
+          hex: "#080A0C",
           token: "--bg-canvas",
-          role: "Sfondo principale scuro, calibrato per ridurre il riverbero.",
+          role: "Sfondo principale ultra-profondo con micro-griglia tattica.",
         },
         {
-          name: "Ardesia Elevata",
-          hex: "#12151E",
+          name: "Terminale Bento",
+          hex: "#0F1317",
           token: "--surface-card",
-          role: "Superficie delle card Bento, modali e pannelli principali.",
+          role: "Superficie delle card Bento arrotondate, modali e pannelli.",
         },
         {
-          name: "Grafite Interattiva",
-          hex: "#1A1F2C",
+          name: "Acciaio Grafite",
+          hex: "#161C22",
           token: "--surface-subtle",
-          role: "Pillole di codice inline, toast e sfondi secondari.",
+          role: "Pillole di codice inline, input e superfici secondarie.",
         },
         {
-          name: "Bordo Notturno",
-          hex: "#1F2636",
+          name: "Griglia Notturna",
+          hex: "#1E282D",
           token: "--border-hairline",
-          role: "Separatori sottili da 1px che definiscono la gerarchia.",
+          role: "Bordi sottili da 1px tra i moduli del layout.",
         },
         {
-          name: "Bianco Neve",
-          hex: "#F8FAFC",
-          token: "--text-primary",
-          role: "Tipografia principale ad alto contrasto e leggibilità.",
+          name: "Fosforo 42",
+          hex: "#00FF88",
+          token: "--hacker-green",
+          role: "Accento hacker principale, stato nodo online, handle e Studio.",
         },
         {
-          name: "Grigio Nebulosa",
-          hex: "#94A3B8",
-          token: "--text-secondary",
-          role: "Timestamp, metadati di cluster e descrizioni secondarie.",
-        },
-        {
-          name: "Cremisi Luminoso",
-          hex: "#F43F5E",
+          name: "Rosso Imperiale Neon",
+          hex: "#E63946",
           token: "--brand-primary",
-          role: "Identità romana vibrante per CTA e azioni chiave su fondo scuro.",
+          role: "Identità SPQR romana per CTA e pulsanti principali con glow.",
         },
         {
-          name: "Rubino Scuro",
-          hex: "#E11D48",
-          token: "--brand-primary-hover",
-          role: "Stato hover e pressione dei pulsanti primari.",
+          name: "Ciano Cyber",
+          hex: "#00E5FF",
+          token: "--accent-cyan",
+          role: "Codice inline, tag progetti (es. minishell) e Cerco Team.",
         },
         {
-          name: "Smeraldo Neon 42",
-          hex: "#34D399",
-          token: "--accent-emerald",
-          role: "Stato Campus Online e categoria Studio / Cluster.",
-        },
-        {
-          name: "Indaco Elettrico",
-          hex: "#818CF8",
-          token: "--accent-indigo",
-          role: "Tag progetti (es. minishell), codice e peer-learning.",
-        },
-        {
-          name: "Ambra Solare",
-          hex: "#FBBF24",
+          name: "Ambra Romano",
+          hex: "#FFB703",
           token: "--accent-amber",
-          role: "Avvisi fissati in bacheca e comunicazioni della community.",
+          role: "Broadcast fissati in bacheca, avvisi ed eventi casuali.",
+        },
+        {
+          name: "Porpora Tech",
+          hex: "#C084FC",
+          token: "--accent-purple",
+          role: "Categoria Off-topic, hackathon e badge speciali.",
+        },
+        {
+          name: "Bianco Schermo",
+          hex: "#ECF2EE",
+          token: "--text-primary",
+          role: "Tipografia principale ad alta leggibilità senza abbagliare.",
+        },
+        {
+          name: "Cenere Sistema",
+          hex: "#7F918A",
+          token: "--text-secondary",
+          role: "Coordinate GPS, timestamp di cluster e metadati.",
         },
       ];
 
@@ -751,7 +799,7 @@
         card.innerHTML = `
           <div class="swatch-color" style="background-color: ${c.hex};">
             <span class="token-chip mono">${c.token}</span>
-            <span class="copy-icon">Copia</span>
+            <span class="copy-icon mono">COPIA</span>
           </div>
           <div class="swatch-body">
             <div class="swatch-top">
@@ -769,7 +817,7 @@
         liked = !liked;
         const countEl = document.getElementById("likeCount");
         countEl.textContent = liked ? "15" : "14";
-        showToast(liked ? "♥ Daje! Reazione aggiunta" : "Reazione rimossa");
+        showToast(liked ? "♥ Daje! +1 Respect" : "Reazione rimossa");
       }
 
       function showToast(msg) {

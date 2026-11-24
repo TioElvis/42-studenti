@@ -76,7 +76,7 @@ export function Avatar({
         loading="lazy"
         onError={() => setIdx((i) => i + 1)}
         className={cn(
-          "object-cover border border-[var(--border)] bg-[var(--surface-2)]",
+          "object-cover border border-[var(--border)] bg-[var(--surface-2)] rounded-[var(--radius-avatar)]",
           className,
         )}
       />
@@ -87,7 +87,7 @@ export function Avatar({
     <span
       style={dim}
       className={cn(
-        "inline-flex items-center justify-center border border-[var(--border)] bg-[var(--cat-studio-bg)] text-[var(--cat-studio-fg)] font-mono font-bold text-xs",
+        "inline-flex items-center justify-center border border-[var(--border)] bg-[var(--cat-studio-bg)] text-[var(--cat-studio-fg)] font-mono font-bold text-xs rounded-[var(--radius-avatar)]",
         className,
       )}
     >

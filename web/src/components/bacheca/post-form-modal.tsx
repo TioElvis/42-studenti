@@ -134,7 +134,7 @@ export function PostFormModal({
 
   const chipClass = (active: boolean) =>
     cn(
-      "border px-2.5 py-1 font-mono text-xs transition-colors",
+      "border px-2.5 py-1 font-mono text-xs transition-colors rounded-[var(--radius-button)]",
       active
         ? "border-[var(--ring)] bg-[var(--surface-2)]"
         : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)]",
@@ -250,7 +250,7 @@ export function PostFormModal({
 
           {/* Options editor (create only). */}
           {isOptions && !isEditing && (
-            <div className="border border-dashed border-[var(--border)] p-3">
+            <div className="border border-dashed border-[var(--border)] p-3 rounded-[var(--radius-inner)]">
               <label className="mb-2 block font-mono text-xs text-[var(--text-muted)]">
                 {t("postForm.optionsLabel")}
               </label>
@@ -268,7 +268,7 @@ export function PostFormModal({
                         type="button"
                         onClick={() => setOptions((prev) => prev.filter((_, idx) => idx !== i))}
                         aria-label={t("postForm.removeOption")}
-                        className="shrink-0 border border-[var(--border)] bg-[var(--surface)] p-1.5 text-[var(--text-muted)] hover:text-[var(--text)]"
+                        className="shrink-0 border border-[var(--border)] bg-[var(--surface)] p-1.5 text-[var(--text-muted)] hover:text-[var(--text)] rounded-[var(--radius-button)]"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
@@ -305,7 +305,7 @@ export function PostFormModal({
 
           {/* Capacity — attendance sondaggio only, on create and edit. */}
           {isAttendance && (
-            <div className="border border-dashed border-[var(--border)] p-3">
+            <div className="border border-dashed border-[var(--border)] p-3 rounded-[var(--radius-inner)]">
               <label className="mb-2 block font-mono text-xs text-[var(--text-muted)]">
                 {isCercoTeam ? t("postForm.capCercoLabel") : t("postForm.capSpotsLabel")}
               </label>

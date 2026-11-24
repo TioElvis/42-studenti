@@ -1,15 +1,21 @@
 "use client";
-import { useTheme } from "@/providers/theme-provider";
+import { useTheme, type Theme } from "@/providers/theme-provider";
 import { useI18n } from "@/providers/i18n-provider";
 
 export function StatusPill() {
   const { theme } = useTheme();
   const { t } = useI18n();
-  const label = theme === "hacker" ? "NODE_ONLINE :: 42_INTRA_SYNCED" : t("status.online");
+  // Each theme has its own flavor: retro terminal, warm Roman, or dev/cluster.
+  const labels: Record<Theme, string> = {
+    classic: t("status.online"),
+    hacker: "NODE_ONLINE :: 42_INTRA_SYNCED",
+    bento: "Campus Roma Online",
+    "bento-hacker": "NODE_ONLINE :: 42_SYNC",
+  };
   return (
-    <span className="inline-flex items-center gap-2 border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-mono retro-shadow-sm">
+    <span className="inline-flex items-center gap-2 border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-[family-name:var(--font-ui)] retro-shadow-sm rounded-[var(--radius-pill)]">
       <span className="status-dot" aria-hidden />
-      <span>{label}</span>
+      <span>{labels[theme]}</span>
     </span>
   );
 }

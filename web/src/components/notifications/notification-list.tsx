@@ -109,7 +109,7 @@ export function NotificationList({
               href={hrefFor(n)}
               onClick={onItemClick}
               className={cn(
-                "flex items-center gap-2.5 border border-[var(--border-subtle)] p-2.5 transition-colors hover:bg-[var(--surface-2)]",
+                "flex items-center gap-2.5 border border-[var(--border-subtle)] p-2.5 transition-colors hover:bg-[var(--surface-2)] rounded-[var(--radius-inner)]",
                 n.is_read
                   ? "bg-[var(--surface-sunken)]"
                   : "border-l-2 border-l-[var(--primary)] bg-[var(--surface)]",

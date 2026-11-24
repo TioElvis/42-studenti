@@ -59,7 +59,7 @@ export function AttendeesDialog({
           </div>
         )}
         {people && people.length === 0 && (
-          <p className="border border-dashed border-[var(--border)] p-3 text-center font-mono text-xs text-[var(--text-muted)]">
+          <p className="border border-dashed border-[var(--border)] p-3 text-center font-mono text-xs text-[var(--text-muted)] rounded-[var(--radius-inner)]">
             {t("attendees.empty")}
           </p>
         )}
@@ -69,7 +69,7 @@ export function AttendeesDialog({
               <li key={p.id}>
                 <Link
                   href={`/u/${p.login}`}
-                  className="flex items-center gap-2.5 border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-2 transition-colors hover:bg-[var(--surface-2)]"
+                  className="flex items-center gap-2.5 border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-2 transition-colors hover:bg-[var(--surface-2)] rounded-[var(--radius-inner)]"
                 >
                   <Avatar user={p} size={28} />
                   <span className="min-w-0">

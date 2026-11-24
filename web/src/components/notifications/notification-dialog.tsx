@@ -55,7 +55,7 @@ export function NotificationDialog({
                     aria-pressed={active}
                     onClick={() => setFilter(tab.id)}
                     className={cn(
-                      "border px-3 py-1.5 font-mono text-xs transition-colors",
+                      "border px-3 py-1.5 font-mono text-xs transition-colors rounded-[var(--radius-pill)]",
                       active
                         ? "border-[var(--border)] bg-[var(--primary)] text-[var(--primary-fg)] retro-shadow-sm"
                         : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)]",
@@ -70,7 +70,7 @@ export function NotificationDialog({
             <button
               type="button"
               onClick={() => setView("list")}
-              className="inline-flex items-center gap-1.5 border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 font-mono text-xs transition-colors hover:bg-[var(--surface-2)]"
+              className="inline-flex items-center gap-1.5 border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 font-mono text-xs transition-colors hover:bg-[var(--surface-2)] rounded-[var(--radius-button)]"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
               {t("notifications.backToList")}
@@ -82,7 +82,7 @@ export function NotificationDialog({
               type="button"
               aria-label={t("notifications.settingsToggle")}
               onClick={() => setView("settings")}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center border border-[var(--border)] bg-[var(--surface)] transition-colors hover:bg-[var(--surface-2)]"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center border border-[var(--border)] bg-[var(--surface)] transition-colors hover:bg-[var(--surface-2)] rounded-[var(--radius-button)]"
             >
               <Settings2 className="h-4 w-4" />
             </button>

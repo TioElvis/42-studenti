@@ -39,7 +39,7 @@ export function NotFoundContent() {
           </div>
 
           {/* Faux terminal readout for the retro vibe. */}
-          <div className="w-full border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-3 text-left font-mono text-xs">
+          <div className="w-full border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-3 text-left font-mono text-xs rounded-[var(--radius-inner)]">
             <div className="text-[var(--text-muted)]">{t("notFound.term1")}</div>
             <div className="text-[var(--primary)]">{t("notFound.term2")}</div>
           </div>

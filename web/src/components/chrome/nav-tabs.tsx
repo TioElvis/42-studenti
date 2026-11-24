@@ -33,7 +33,7 @@ export function NavTabs() {
           id="nav-select"
           value={current}
           onChange={(e) => router.push(e.target.value)}
-          className="w-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-mono text-sm text-[var(--text)] retro-shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="w-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-mono text-sm text-[var(--text)] retro-shadow-sm rounded-[var(--radius-input)] focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           {TABS.map((tab) => (
             <option key={tab.href} value={tab.href}>
@@ -53,7 +53,7 @@ export function NavTabs() {
               href={tab.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "border px-3.5 py-1.5 font-mono text-sm transition-colors",
+                "border px-3.5 py-1.5 font-mono text-sm transition-colors rounded-[var(--radius-button)]",
                 active
                   ? "border-[var(--border)] bg-[var(--primary)] text-[var(--primary-fg)] retro-shadow-sm"
                   : "border-transparent text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]",

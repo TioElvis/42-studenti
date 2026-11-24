@@ -15,7 +15,7 @@ export function EventScopeBadge({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide",
+        "inline-flex shrink-0 items-center border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide rounded-[var(--radius-pill)]",
         internal
           ? "border-[var(--border)] bg-[var(--primary)] text-[var(--primary-fg)]"
           : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]",

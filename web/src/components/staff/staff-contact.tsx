@@ -50,7 +50,7 @@ export function StaffContact() {
 
   const chip = (active: boolean) =>
     cn(
-      "inline-flex items-center gap-1.5 border px-2.5 py-1 font-mono text-xs transition-colors",
+      "inline-flex items-center gap-1.5 border px-2.5 py-1 font-mono text-xs transition-colors rounded-[var(--radius-button)]",
       active
         ? "border-[var(--ring)] bg-[var(--surface-2)]"
         : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)]",

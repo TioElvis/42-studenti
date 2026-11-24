@@ -30,19 +30,19 @@ function Toggle({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="mt-2.5 flex w-full items-center justify-between gap-3 border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-left transition-colors hover:bg-[var(--surface-2)]"
+      className="mt-2.5 flex w-full items-center justify-between gap-3 border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-left transition-colors hover:bg-[var(--surface-2)] rounded-[var(--radius-button)]"
     >
       <span className="font-mono text-sm">{label}</span>
       <span
         aria-hidden
         className={cn(
-          "relative inline-flex h-5 w-9 shrink-0 items-center border border-[var(--border)] transition-colors",
+          "relative inline-flex h-5 w-9 shrink-0 items-center border border-[var(--border)] transition-colors rounded-[var(--radius-pill)]",
           checked ? "bg-[var(--primary)]" : "bg-[var(--surface-sunken)]",
         )}
       >
         <span
           className={cn(
-            "block h-3.5 w-3.5 border border-[var(--border)] bg-[var(--surface)] transition-transform",
+            "block h-3.5 w-3.5 border border-[var(--border)] bg-[var(--surface)] transition-transform rounded-[var(--radius-pill)]",
             checked ? "translate-x-4" : "translate-x-0.5",
           )}
         />
@@ -112,7 +112,7 @@ export function NotificationSettingsSection() {
               aria-pressed={active}
               onClick={() => patch({ notify_posts: o.id })}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 border px-2 py-2 text-center font-mono text-xs transition-colors",
+                "flex flex-1 items-center justify-center gap-1.5 border px-2 py-2 text-center font-mono text-xs transition-colors rounded-[var(--radius-button)]",
                 active
                   ? "border-[var(--ring)] bg-[var(--surface-2)] font-bold"
                   : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)]",

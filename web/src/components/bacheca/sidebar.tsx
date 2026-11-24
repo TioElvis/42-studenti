@@ -162,7 +162,7 @@ function CommunityEvents({
             </div>
           );
           const cls =
-            "flex w-full items-center gap-3 border border-[var(--border-subtle)] p-2 text-left transition-colors hover:border-[var(--border)] hover:bg-[var(--surface-2)]";
+            "flex w-full items-center gap-3 border border-[var(--border-subtle)] p-2 text-left transition-colors hover:border-[var(--border)] hover:bg-[var(--surface-2)] rounded-[var(--radius-inner)]";
           // Clicking opens the full post dialog (handled by the Feed); without a
           // handler we fall back to activating the Sondaggi filter.
           return (
@@ -193,10 +193,11 @@ function PinnedNotice() {
   const { t } = useI18n();
   return (
     <div
-      className="border border-[var(--border)] p-4 retro-shadow"
+      className="border p-4 retro-shadow rounded-[var(--radius-card)]"
       style={{
-        background: "var(--cat-evento_casuale-bg)",
-        color: "var(--cat-evento_casuale-fg)",
+        background: "var(--notice-bg)",
+        color: "var(--notice-fg)",
+        borderColor: "var(--notice-border)",
       }}
     >
       <div className="mb-1.5 flex items-center gap-1.5 font-mono text-[11px] font-bold">
@@ -253,9 +254,9 @@ function UpcomingEvents() {
               type="button"
               onClick={() => setSelected(ev)}
               aria-label={t("sidebar.openEvent", { name: ev.name ?? t("sidebar.eventFallback") })}
-              className="flex w-full items-center gap-3 border border-[var(--border-subtle)] p-2 text-left transition-colors hover:border-[var(--border)] hover:bg-[var(--surface-2)]"
+              className="flex w-full items-center gap-3 border border-[var(--border-subtle)] p-2 text-left transition-colors hover:border-[var(--border)] hover:bg-[var(--surface-2)] rounded-[var(--radius-inner)]"
             >
-              <div className="flex w-11 shrink-0 flex-col items-center border border-[var(--border)] bg-[var(--surface-2)] py-1">
+              <div className="flex w-11 shrink-0 flex-col items-center border border-[var(--border)] bg-[var(--surface-2)] py-1 rounded-[var(--radius-inner)]">
                 <span className="font-display text-base font-bold leading-none">{d.day}</span>
                 <span className="font-mono text-[9px] text-[var(--text-muted)]">{d.month}</span>
               </div>

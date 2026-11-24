@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const base =
-  "w-full bg-[var(--surface-sunken)] text-[var(--text)] border border-[var(--border)] px-3 py-2 text-sm font-mono placeholder:text-[var(--text-muted)] focus-visible:outline-2 focus-visible:outline-offset-2";
+  "w-full bg-[var(--surface-sunken)] text-[var(--text)] border border-[var(--border)] rounded-[var(--radius-input)] px-3 py-2 text-sm font-[family-name:var(--font-ui)] placeholder:text-[var(--text-muted)] focus-visible:outline-2 focus-visible:outline-offset-2";
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => (

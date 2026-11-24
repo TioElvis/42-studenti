@@ -18,7 +18,7 @@ export function UserMenu() {
       <Link
         href={`/u/${user.login}`}
         title={t("profile.myProfile")}
-        className="hidden items-center gap-2 border border-[var(--border)] bg-[var(--surface)] px-2 py-1 retro-shadow-sm transition-colors hover:bg-[var(--surface-2)] sm:inline-flex"
+        className="hidden items-center gap-2 border border-[var(--border)] bg-[var(--surface)] px-2 py-1 retro-shadow-sm transition-colors hover:bg-[var(--surface-2)] sm:inline-flex rounded-[var(--radius-button)]"
       >
         <Avatar user={user} size={24} />
         <span className="font-mono text-xs">@{user.login}</span>

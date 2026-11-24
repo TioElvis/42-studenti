@@ -49,7 +49,7 @@ export function LikeButton({
       aria-pressed={liked}
       disabled={pending}
       className={cn(
-        "inline-flex items-center gap-1.5 border border-[var(--border)] font-mono transition-colors retro-shadow-sm hover-lift disabled:opacity-60",
+        "inline-flex items-center gap-1.5 border border-[var(--border)] font-mono transition-colors retro-shadow-sm hover-lift disabled:opacity-60 rounded-[var(--radius-button)]",
         size === "sm" ? "px-2.5 py-1 text-xs" : "px-3.5 py-2 text-sm",
         liked
           ? "bg-[var(--primary)] text-[var(--primary-fg)]"

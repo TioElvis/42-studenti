@@ -296,7 +296,7 @@ export function Feed() {
                 aria-pressed={sondaggiOnly}
                 onClick={() => setSondaggiOnly((v) => !v)}
                 className={cn(
-                  "border px-3 py-1.5 font-mono text-xs transition-colors",
+                  "border px-3 py-1.5 font-mono text-xs transition-colors rounded-[var(--radius-pill)]",
                   sondaggiOnly
                     ? "border-[var(--border)] bg-[var(--primary)] text-[var(--primary-fg)] retro-shadow-sm"
                     : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]",

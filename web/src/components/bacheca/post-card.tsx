@@ -93,7 +93,7 @@ export function PostCard({
             size="sm"
             onChange={(state) => onLike(post, state)}
           />
-          <span className="inline-flex items-center gap-1.5 border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 font-mono text-xs text-[var(--text-muted)] retro-shadow-sm">
+          <span className="inline-flex items-center gap-1.5 border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 font-mono text-xs text-[var(--text-muted)] retro-shadow-sm rounded-[var(--radius-pill)]">
             <MessageSquare className="h-3.5 w-3.5" />
             {post.comment_count}
           </span>
@@ -107,7 +107,7 @@ export function PostCard({
                   e.stopPropagation();
                   onEdit(post);
                 }}
-                className="inline-flex items-center gap-1 border border-[var(--border)] bg-[var(--surface)] px-2 py-1 font-mono text-xs hover:bg-[var(--surface-2)]"
+                className="inline-flex items-center gap-1 border border-[var(--border)] bg-[var(--surface)] px-2 py-1 font-mono text-xs hover:bg-[var(--surface-2)] rounded-[var(--radius-pill)]"
               >
                 <Pencil className="h-3.5 w-3.5" /> {t("common.edit")}
               </button>

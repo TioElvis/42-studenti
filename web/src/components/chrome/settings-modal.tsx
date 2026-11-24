@@ -30,6 +30,18 @@ const OPTIONS: ThemeOption[] = [
     subKey: "settings.hackerSub",
     swatches: ["#0b0d0e", "#00ff88", "#e63946", "#00e5ff", "#ffb703"],
   },
+  {
+    id: "bento",
+    name: "Bento",
+    subKey: "settings.bentoSub",
+    swatches: ["#f8f9fa", "#e11d48", "#10b981", "#6366f1", "#0f172a"],
+  },
+  {
+    id: "bento-hacker",
+    name: "Bento Hacker",
+    subKey: "settings.bentoHackerSub",
+    swatches: ["#080a0c", "#00ff88", "#e63946", "#00e5ff", "#ffb703"],
+  },
 ];
 
 export function SettingsModal({ compact = false }: { compact?: boolean }) {
@@ -60,7 +72,7 @@ export function SettingsModal({ compact = false }: { compact?: boolean }) {
                 onClick={() => setTheme(opt.id)}
                 aria-pressed={active}
                 className={cn(
-                  "flex items-center gap-3 border p-3 text-left transition-colors hover-lift",
+                  "flex items-center gap-3 border p-3 text-left transition-colors hover-lift rounded-[var(--radius-inner)]",
                   active
                     ? "border-[var(--ring)] bg-[var(--surface-2)]"
                     : "border-[var(--border)] bg-[var(--surface)]",
@@ -100,7 +112,7 @@ export function SettingsModal({ compact = false }: { compact?: boolean }) {
                 onClick={() => setLang(l.id)}
                 aria-pressed={active}
                 className={cn(
-                  "flex flex-1 items-center justify-center gap-2 border px-3 py-2 font-mono text-sm transition-colors",
+                  "flex flex-1 items-center justify-center gap-2 border px-3 py-2 font-mono text-sm transition-colors rounded-[var(--radius-button)]",
                   active
                     ? "border-[var(--ring)] bg-[var(--surface-2)] font-bold"
                     : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)]",

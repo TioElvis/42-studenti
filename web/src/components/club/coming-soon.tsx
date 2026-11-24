@@ -23,7 +23,7 @@ export function ClubComingSoon() {
         <WindowBar title="WORK_IN_PROGRESS.EXE" />
         <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
           <div
-            className="flex h-14 w-14 items-center justify-center border border-[var(--border)] bg-[var(--surface-2)]"
+            className="flex h-14 w-14 items-center justify-center border border-[var(--border)] bg-[var(--surface-2)] rounded-[var(--radius-inner)]"
             aria-hidden
           >
             <Hammer className="h-7 w-7" />
@@ -54,7 +54,7 @@ export function ClubComingSoon() {
           >
             <div className="mb-3 flex items-center justify-between">
               <Icon className="h-6 w-6" aria-hidden />
-              <span className="border border-[var(--border)] bg-[var(--surface-2)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-muted)]">
+              <span className="border border-[var(--border)] bg-[var(--surface-2)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-muted)] rounded-[var(--radius-pill)]">
                 SOON
               </span>
             </div>

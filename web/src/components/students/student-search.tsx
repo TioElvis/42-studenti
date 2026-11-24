@@ -106,7 +106,7 @@ export function StudentSearch() {
                   <li key={u.id}>
                     <Link
                       href={`/u/${u.login}`}
-                      className="flex items-center gap-2.5 border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-2 transition-colors hover:bg-[var(--surface-2)]"
+                      className="flex items-center gap-2.5 border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-2 transition-colors hover:bg-[var(--surface-2)] rounded-[var(--radius-inner)]"
                     >
                       <Avatar user={u} size={32} />
                       <span className="min-w-0">

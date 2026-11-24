@@ -186,7 +186,7 @@ export function ContentBrowser({
                           onClick={() => open(e)}
                           aria-current={selected?.path === e.path ? "true" : undefined}
                           className={cn(
-                            "flex w-full items-center gap-2 border-l-2 px-2 py-1.5 text-left transition-colors",
+                            "flex w-full items-center gap-2 border-l-2 px-2 py-1.5 text-left transition-colors rounded-[var(--radius-inner)]",
                             selected?.path === e.path
                               ? "border-[var(--primary)] bg-[var(--surface-2)]"
                               : "border-transparent hover:bg-[var(--surface-2)]",
@@ -244,7 +244,7 @@ export function ContentBrowser({
                       {fileError}
                     </p>
                   ) : file ? (
-                    <pre className="overflow-x-auto whitespace-pre-wrap break-words border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-3 font-mono text-sm leading-relaxed">
+                    <pre className="overflow-x-auto whitespace-pre-wrap break-words border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-3 font-mono text-sm leading-relaxed rounded-[var(--radius-inner)]">
                       {file.content}
                     </pre>
                   ) : null)}
@@ -254,7 +254,7 @@ export function ContentBrowser({
                   <img
                     src={api.contentFileUrl(section, selected.path)}
                     alt={selected.name}
-                    className="max-w-full border border-[var(--border)] bg-[var(--surface-2)]"
+                    className="max-w-full border border-[var(--border)] bg-[var(--surface-2)] rounded-[var(--radius-inner)]"
                   />
                 )}
 
@@ -262,12 +262,12 @@ export function ContentBrowser({
                   <iframe
                     src={api.contentFileUrl(section, selected.path)}
                     title={selected.name}
-                    className="h-[70vh] w-full border border-[var(--border)] bg-[var(--surface-2)]"
+                    className="h-[70vh] w-full border border-[var(--border)] bg-[var(--surface-2)] rounded-[var(--radius-inner)]"
                   />
                 )}
 
                 {selected.kind === "other" && (
-                  <p className="border border-dashed border-[var(--border)] p-4 text-center font-mono text-sm text-[var(--text-muted)]">
+                  <p className="border border-dashed border-[var(--border)] p-4 text-center font-mono text-sm text-[var(--text-muted)] rounded-[var(--radius-inner)]">
                     {t("content.noPreview")}
                   </p>
                 )}

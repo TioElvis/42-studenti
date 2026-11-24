@@ -99,7 +99,7 @@ function AttendanceControls({
             e.stopPropagation();
             onOpenAttendees(post.id);
           }}
-          className="inline-flex items-center gap-1.5 border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 font-mono text-xs hover:bg-[var(--surface-2)]"
+          className="inline-flex items-center gap-1.5 border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 font-mono text-xs hover:bg-[var(--surface-2)] rounded-[var(--radius-pill)]"
         >
           <Users className="h-3.5 w-3.5" />
           {capacity}
@@ -178,7 +178,7 @@ function OptionsPoll({
             aria-pressed={o.voted_by_me}
             onClick={(e) => vote(e, o.id)}
             className={cn(
-              "relative overflow-hidden border px-2.5 py-2 text-left transition-colors",
+              "relative overflow-hidden border px-2.5 py-2 text-left transition-colors rounded-[var(--radius-inner)]",
               o.voted_by_me
                 ? "border-[var(--ring)] bg-[var(--surface)]"
                 : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-2)]",

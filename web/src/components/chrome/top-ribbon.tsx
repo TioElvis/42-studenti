@@ -7,6 +7,20 @@ export function TopRibbon() {
   const { theme } = useTheme();
   const { t } = useI18n();
   const hacker = theme === "hacker";
+  // The "dev/cluster" family (hacker + its modern twins) shows GPS coordinates;
+  // the "warm Roman" family (classic + bento) shows the campus street address.
+  const dev = hacker || theme === "bento-hacker";
+
+  const left = hacker
+    ? "root@42roma:~$ ./init_campus_network.sh --theme=spqr-cyber"
+    : dev
+      ? "42 Roma // cluster node · SPQR"
+      : t("ribbon.headline");
+  const right = hacker
+    ? "[LAT: 41.90411° N // LON: 12.549614° E]"
+    : dev
+      ? "41.90411° N · 12.549614° E"
+      : "Via Sandro Sandri, 81 - 00159 Roma";
 
   return (
     <div
@@ -17,17 +31,8 @@ export function TopRibbon() {
         borderColor: hacker ? "var(--primary)" : "var(--border)",
       }}
     >
-      {hacker ? (
-        <>
-          <span className="truncate">root@42roma:~$ ./init_campus_network.sh --theme=spqr-cyber</span>
-          <span className="hidden sm:inline">[LAT: 41.90411° N // LON: 12.549614° E]</span>
-        </>
-      ) : (
-        <>
-          <span className="truncate">{t("ribbon.headline")}</span>
-          <span className="hidden sm:inline">Via Sandro Sandri, 81 - 00159 Roma</span>
-        </>
-      )}
+      <span className="truncate">{left}</span>
+      <span className="hidden sm:inline">{right}</span>
     </div>
   );
 }

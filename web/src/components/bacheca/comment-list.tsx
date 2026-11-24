@@ -70,7 +70,7 @@ export function CommentList({
       </div>
 
       {comments.length === 0 ? (
-        <p className="border border-dashed border-[var(--border)] p-3 text-center font-mono text-xs text-[var(--text-muted)]">
+        <p className="border border-dashed border-[var(--border)] p-3 text-center font-mono text-xs text-[var(--text-muted)] rounded-[var(--radius-inner)]">
           {t("comments.empty")}
         </p>
       ) : (
@@ -78,7 +78,7 @@ export function CommentList({
           {comments.map((c) => (
             <li
               key={c.id}
-              className="border border-[var(--border)] bg-[var(--surface-sunken)] p-3"
+              className="border border-[var(--border)] bg-[var(--surface-sunken)] p-3 rounded-[var(--radius-inner)]"
             >
               <div className="mb-1 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -130,7 +130,7 @@ export function CommentList({
 
       <form onSubmit={submit} className="flex flex-col gap-2">
         {replyTo && (
-          <div className="flex items-center justify-between gap-2 border border-[var(--border-subtle)] bg-[var(--surface-2)] px-2.5 py-1.5 font-mono text-[11px]">
+          <div className="flex items-center justify-between gap-2 border border-[var(--border-subtle)] bg-[var(--surface-2)] px-2.5 py-1.5 font-mono text-[11px] rounded-[var(--radius-inner)]">
             <span className="flex items-center gap-1 text-[var(--text-muted)]">
               <Reply className="h-3 w-3" aria-hidden /> {t("comments.replyBanner")}{" "}
               <span className="font-bold text-[var(--text)]">@{replyTo.author.login}</span>

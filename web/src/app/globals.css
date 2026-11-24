@@ -1,11 +1,13 @@
-/* 42 Studenti — unified design system with two swappable 90s themes.
+/* 42 Studenti — unified design system with swappable themes.
  *
- * Both themes share the SAME layout, window chrome and semantic token NAMES.
- * Switching theme only remaps these CSS custom properties (see the
- * [data-theme="..."] blocks) — never the structure. Palettes are lifted
- * verbatim from assets/classic.html and assets/hacker.html.
+ * Classic & Hacker (90s retro) + Bento & Bento Dark (soft modern). Every theme
+ * shares the SAME layout, window chrome and semantic token NAMES; switching
+ * theme only remaps these CSS custom properties (see the [data-theme="..."]
+ * blocks) — never the structure. Palettes are lifted verbatim from the
+ * assets/*.html reference files.
  */
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
@@ -93,6 +95,164 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * THEME C — Bento (light). From assets/bento.html.
+ * Soft modern "bento" look: slate neutrals, rose brand, Plus Jakarta Sans +
+ * JetBrains Mono. Maps onto the same token names (no structural change).
+ * ------------------------------------------------------------------------- */
+[data-theme="bento"] {
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-sunken: #f1f5f9;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --primary: #e11d48;
+  --primary-hover: #be123c;
+  --primary-fg: #ffffff;
+  --border: #cbd5e1;
+  --border-subtle: #e2e8f0;
+  --ring: #e11d48;
+  --status-online: #10b981;
+  --shadow: #cbd5e1;
+  --ribbon-bg: #0f172a;
+  --ribbon-fg: #f8f9fa;
+
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --body-font: var(--font-sans);
+  --grid-color: transparent;
+  --grid-size: 24px;
+  --scanline-opacity: 0;
+  --glow: 0 0 0 3px rgba(16, 185, 129, 0.15); /* soft emerald ring on the status dot */
+
+  --cat-studio-bg: #ecfdf5;      --cat-studio-fg: #047857;
+  --cat-cerco_team-bg: #fff1f2;  --cat-cerco_team-fg: #be123c;
+  --cat-evento_casuale-bg: #fffbeb; --cat-evento_casuale-fg: #b45309;
+  --cat-vita_romana-bg: #eef2ff; --cat-vita_romana-fg: #4338ca;
+  --cat-mercatino-bg: #f5f3ff;   --cat-mercatino-fg: #6d28d9;
+  --cat-off_topic-bg: #f1f5f9;   --cat-off_topic-fg: #475569;
+  --cat-border: var(--border-subtle);
+}
+
+/* ---------------------------------------------------------------------------
+ * THEME D — Bento Hacker. From assets/bento-hacker.html. Modern SPQR Hacker:
+ * obsidian canvas, phosphor-green micro-grid + crimson/emerald glow, no CRT.
+ * ------------------------------------------------------------------------- */
+[data-theme="bento-hacker"] {
+  --bg: #080a0c;
+  --surface: #0f1317;
+  --surface-2: #161c22;
+  --surface-sunken: #080a0c;
+  --text: #ecf2ee;
+  --text-muted: #7f918a;
+  --primary: #e63946;
+  --primary-hover: #ff4757;
+  --primary-fg: #ffffff;
+  --border: #1e282d;
+  --border-subtle: #1e282d;
+  --ring: #00ff88;
+  --status-online: #00ff88;
+  --shadow: #000000;
+  --ribbon-bg: #0f1317;
+  --ribbon-fg: #00ff88;
+
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --body-font: var(--font-sans);
+  --grid-color: rgba(0, 255, 136, 0.025);
+  --grid-size: 28px;
+  --scanline-opacity: 0;
+  --glow: 0 0 8px rgba(0, 255, 136, 0.7);
+
+  --cat-studio-bg: rgba(0, 255, 136, 0.12);  --cat-studio-fg: #00ff88;
+  --cat-cerco_team-bg: rgba(0, 229, 255, 0.12); --cat-cerco_team-fg: #00e5ff;
+  --cat-evento_casuale-bg: rgba(255, 183, 3, 0.12); --cat-evento_casuale-fg: #ffb703;
+  --cat-vita_romana-bg: rgba(192, 132, 252, 0.14); --cat-vita_romana-fg: #c084fc;
+  --cat-mercatino-bg: rgba(230, 57, 70, 0.16); --cat-mercatino-fg: #ff6b74;
+  --cat-off_topic-bg: rgba(127, 145, 138, 0.14); --cat-off_topic-fg: #a9bcb4;
+  --cat-border: var(--border);
+}
+
+/* ---------------------------------------------------------------------------
+ * Structural tokens — geometry, elevation and typography per design FAMILY.
+ * Retro (classic/hacker): 0px corners + hard offset shadows + diagonal lift.
+ * Bento (bento/bento-hacker): rounded corners + soft diffused shadows + vertical
+ * lift + tight tracking. Components read these, so they morph automatically.
+ * ------------------------------------------------------------------------- */
+:root,
+[data-theme="classic"],
+[data-theme="hacker"] {
+  --radius-card: 0px;
+  --radius-inner: 0px;
+  --radius-button: 0px;
+  --radius-input: 0px;
+  --radius-pill: 0px;
+  --radius-avatar: 0px;
+  --elev-sm: 2px 2px 0 var(--shadow);
+  --elev-md: 3px 3px 0 var(--shadow);
+  --elev-lg: 5px 5px 0 var(--shadow);
+  --elev-lift: 5px 5px 0 var(--shadow);
+  --lift-x: -2px;
+  --lift-y: -2px;
+  --body-gradient: none;
+  --tracking: normal;
+  --tracking-tight: normal;
+  --bar-weight: 600;
+  --font-ui: var(--font-mono); /* retro controls are monospace */
+  --notice-bg: var(--cat-evento_casuale-bg);
+  --notice-fg: var(--cat-evento_casuale-fg);
+  --notice-border: var(--border);
+}
+
+[data-theme="bento"] {
+  --radius-card: 20px;
+  --radius-inner: 16px;
+  --radius-button: 10px;
+  --radius-input: 10px;
+  --radius-pill: 999px;
+  --radius-avatar: 12px;
+  --elev-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --elev-md: 0 4px 12px -2px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
+  --elev-lg: 0 16px 32px -8px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.04);
+  --elev-lift: 0 16px 32px -8px rgba(15, 23, 42, 0.1), 0 6px 12px -4px rgba(15, 23, 42, 0.06);
+  --lift-x: 0px;
+  --lift-y: -1px;
+  --body-gradient: radial-gradient(at 50% 0%, rgba(225, 29, 72, 0.045) 0px, transparent 55%);
+  --tracking: -0.01em;
+  --tracking-tight: -0.02em;
+  --bar-weight: 700;
+  --font-ui: var(--font-sans); /* bento controls use Plus Jakarta Sans */
+  --notice-bg: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+  --notice-fg: #b45309;
+  --notice-border: #fde68a;
+}
+
+[data-theme="bento-hacker"] {
+  --radius-card: 20px;
+  --radius-inner: 16px;
+  --radius-button: 10px;
+  --radius-input: 10px;
+  --radius-pill: 999px;
+  --radius-avatar: 12px;
+  --elev-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --elev-md: 0 8px 22px -4px rgba(0, 0, 0, 0.55), 0 2px 6px -2px rgba(0, 0, 0, 0.35);
+  --elev-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 24px -6px rgba(0, 255, 136, 0.16);
+  --elev-lift: 0 24px 44px -12px rgba(0, 0, 0, 0.72), 0 0 20px -4px rgba(0, 255, 136, 0.22);
+  --lift-x: 0px;
+  --lift-y: -3px;
+  --body-gradient: radial-gradient(ellipse 75% 45% at 50% -10%, rgba(0, 255, 136, 0.08) 0%, rgba(230, 57, 70, 0.06) 40%, transparent 70%);
+  --tracking: -0.01em;
+  --tracking-tight: -0.03em;
+  --bar-weight: 700;
+  --font-ui: var(--font-sans);
+  --notice-bg: linear-gradient(180deg, rgba(0, 255, 136, 0.08) 0%, rgba(15, 19, 23, 0.95) 100%);
+  --notice-fg: #00ff88;
+  --notice-border: rgba(0, 255, 136, 0.26);
+}
+
+/* ---------------------------------------------------------------------------
  * Base elements
  * ------------------------------------------------------------------------- */
 * {
@@ -108,10 +268,16 @@ body {
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--body-font);
+  letter-spacing: var(--tracking);
+  /* Layer 1: per-theme ambient gradient (bento) or none (retro). Layers 2–3:
+     the retro grid (transparent in bento). */
   background-image:
+    var(--body-gradient),
     linear-gradient(var(--grid-color) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-  background-size: var(--grid-size) var(--grid-size);
+  background-size: 100% 100%, var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
+  background-repeat: no-repeat, repeat, repeat;
+  background-attachment: fixed, scroll, scroll;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
@@ -149,31 +315,36 @@ button:disabled {
 /* ---------------------------------------------------------------------------
  * Retro OS chrome — shared by both themes
  * ------------------------------------------------------------------------- */
-.retro-shadow { box-shadow: 3px 3px 0 var(--shadow); }
-.retro-shadow-sm { box-shadow: 2px 2px 0 var(--shadow); }
-.retro-shadow-lg { box-shadow: 5px 5px 0 var(--shadow); }
+/* Elevation + corners are token-driven, so the same classes render hard retro
+   offsets (0px corners) or soft bento shadows (rounded) per theme. */
+.retro-shadow { box-shadow: var(--elev-md); }
+.retro-shadow-sm { box-shadow: var(--elev-sm); }
+.retro-shadow-lg { box-shadow: var(--elev-lg); }
 
 .hover-lift {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 .hover-lift:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 var(--shadow);
+  transform: translate(var(--lift-x), var(--lift-y));
+  box-shadow: var(--elev-lift);
 }
 
 .window {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-radius: var(--radius-card);
 }
 .window-bar {
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
   padding: 8px 14px;
   font-size: 11px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-family: var(--font-mono);
+  font-weight: var(--bar-weight);
   color: var(--text-muted);
 }
 .window-dots { display: flex; gap: 3px; align-items: center; }
@@ -190,6 +361,7 @@ button:disabled {
   font-size: 11px;
   padding: 3px 9px;
   border: 1px solid var(--cat-border);
+  border-radius: var(--radius-pill);
   font-family: var(--font-mono);
   white-space: nowrap;
   background: var(--_bg);
@@ -225,7 +397,8 @@ button:disabled {
   color: var(--primary);
   font-family: var(--font-display);
 }
-[data-theme="hacker"] .cursor-blink { color: var(--status-online); }
+[data-theme="hacker"] .cursor-blink,
+[data-theme="bento-hacker"] .cursor-blink { color: var(--status-online); }
 
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(14px); }

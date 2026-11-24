@@ -143,7 +143,7 @@ function EventCard({
     >
       <WindowBar title={`EVENTO_${String(event.id).slice(-4)}.ICS`} />
       <div className="flex gap-3 p-4">
-        <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center border border-[var(--border)] bg-[var(--surface-2)]">
+        <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center border border-[var(--border)] bg-[var(--surface-2)] rounded-[var(--radius-inner)]">
           <span className="font-display text-2xl font-bold leading-none">{d.day}</span>
           <span className="font-mono text-[10px] text-[var(--text-muted)]">{d.month}</span>
         </div>

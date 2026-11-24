@@ -98,7 +98,7 @@ export function ContributeModal({
 
   const chip = (active: boolean) =>
     cn(
-      "border px-2.5 py-1 font-mono text-xs transition-colors",
+      "border px-2.5 py-1 font-mono text-xs transition-colors rounded-[var(--radius-button)]",
       active
         ? "border-[var(--ring)] bg-[var(--surface-2)]"
         : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)]",
@@ -213,7 +213,7 @@ export function ContributeModal({
                 <label className="mb-1 block font-mono text-xs text-[var(--text-muted)]">
                   {t("contribute.fileLabel")}
                 </label>
-                <label className="flex cursor-pointer items-center gap-2 border border-dashed border-[var(--border)] bg-[var(--surface)] px-3 py-3 font-mono text-xs hover:bg-[var(--surface-2)]">
+                <label className="flex cursor-pointer items-center gap-2 border border-dashed border-[var(--border)] bg-[var(--surface)] px-3 py-3 font-mono text-xs hover:bg-[var(--surface-2)] rounded-[var(--radius-input)]">
                   <Upload className="h-4 w-4" />
                   <span className="truncate">{filename || t("contribute.fileLabel")}</span>
                   <input type="file" onChange={onFile} className="sr-only" />

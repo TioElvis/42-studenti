@@ -2,7 +2,10 @@
 
 import * as React from "react";
 
-export type Theme = "classic" | "hacker";
+export type Theme = "classic" | "hacker" | "bento" | "bento-hacker";
+
+/** All supported themes, in cycle order. */
+export const THEMES: Theme[] = ["classic", "hacker", "bento", "bento-hacker"];
 
 const STORAGE_KEY = "42roma.theme";
 const DEFAULT_THEME: Theme = "classic";
@@ -17,11 +20,15 @@ const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 
 /** Inline script (runs before paint) that applies the stored theme with no flash. */
 export const themeInitScript = `
-(function(){try{var t=localStorage.getItem(${JSON.stringify(STORAGE_KEY)});
-if(t!=="classic"&&t!=="hacker"){t=${JSON.stringify(DEFAULT_THEME)};}
+(function(){try{var ts=${JSON.stringify(THEMES)};var t=localStorage.getItem(${JSON.stringify(STORAGE_KEY)});
+if(ts.indexOf(t)===-1){t=${JSON.stringify(DEFAULT_THEME)};}
 document.documentElement.setAttribute("data-theme",t);}catch(e){
 document.documentElement.setAttribute("data-theme",${JSON.stringify(DEFAULT_THEME)});}})();
 `;
+
+function isTheme(v: unknown): v is Theme {
+  return typeof v === "string" && (THEMES as string[]).includes(v);
+}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = React.useState<Theme>(DEFAULT_THEME);
@@ -29,7 +36,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === "classic" || stored === "hacker") {
+      if (isTheme(stored)) {
         setThemeState(stored);
       }
     } catch {
@@ -48,7 +55,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = React.useCallback(() => {
-    setTheme(theme === "classic" ? "hacker" : "classic");
+    const i = THEMES.indexOf(theme);
+    setTheme(THEMES[(i + 1) % THEMES.length]!);
   }, [theme, setTheme]);
 
   const value = React.useMemo(
