@@ -12,6 +12,9 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 # Repo-root ``assets/`` dir (…/42-studenti/assets): holds the file-based
 # Materiale / Archivio content served by the content router.
 _DEFAULT_ASSETS_DIR = str(Path(__file__).resolve().parents[2] / "assets")
@@ -23,9 +26,6 @@ FORTY_TWO_USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 )
-
-from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
