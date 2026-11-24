@@ -192,6 +192,80 @@ async def test_direct_push_requires_write_access():
             )
 
 
+def _server_settings():
+    return SimpleNamespace(
+        github_repo="TioElvis/42-studenti",
+        github_branch="main",
+        github_write_token="ghs_servertoken",
+    )
+
+
+async def test_contribute_server_push():
+    s = _server_settings()
+    with respx.mock(assert_all_called=False) as m:
+        m.get(
+            url__startswith="https://api.github.com/repos/TioElvis/42-studenti/contents/"
+        ).mock(return_value=R(404, json={}))
+        m.put(
+            url__startswith="https://api.github.com/repos/TioElvis/42-studenti/contents/"
+        ).mock(
+            return_value=R(
+                201,
+                json={
+                    "content": {
+                        "html_url": "https://github.com/TioElvis/42-studenti/blob/main/assets/material/x.md"
+                    }
+                },
+            )
+        )
+        url = await github_user.contribute_server(
+            settings=s,
+            mode="push",
+            section="material",
+            rel_path="x.md",
+            content_b64="aGk=",
+            message="m",
+            title="t",
+            body="b",
+            author_name="Alice",
+            author_login="alice",
+        )
+    assert "blob/main/assets/material/x.md" in url
+
+
+async def test_contribute_server_pr():
+    s = _server_settings()
+    with respx.mock(assert_all_called=False) as m:
+        m.get("https://api.github.com/repos/TioElvis/42-studenti/git/ref/heads/main").mock(
+            return_value=R(200, json={"object": {"sha": "s1"}})
+        )
+        m.post("https://api.github.com/repos/TioElvis/42-studenti/git/refs").mock(
+            return_value=R(201, json={})
+        )
+        m.get(
+            url__startswith="https://api.github.com/repos/TioElvis/42-studenti/contents/"
+        ).mock(return_value=R(404, json={}))
+        m.put(
+            url__startswith="https://api.github.com/repos/TioElvis/42-studenti/contents/"
+        ).mock(return_value=R(201, json={}))
+        m.post("https://api.github.com/repos/TioElvis/42-studenti/pulls").mock(
+            return_value=R(201, json={"html_url": "https://github.com/TioElvis/42-studenti/pull/12"})
+        )
+        url = await github_user.contribute_server(
+            settings=s,
+            mode="pr",
+            section="archive",
+            rel_path="recap.md",
+            content_b64="aGk=",
+            message="m",
+            title="t",
+            body="b",
+            author_name="Alice",
+            author_login="alice",
+        )
+    assert url.endswith("/pull/12")
+
+
 def test_archive_allow_list():
     from app.config import Settings
 

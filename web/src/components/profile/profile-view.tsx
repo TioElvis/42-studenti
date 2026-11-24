@@ -260,7 +260,7 @@ export function ProfileView({ login }: { login: string }) {
             </div>
           </Window>
 
-          {profile.is_me && gh?.configured && (
+          {profile.is_me && gh?.configured && !gh.server_mode && (
             <Window className="retro-shadow">
               <WindowBar title="GITHUB.EXE" />
               <div className="flex flex-wrap items-center justify-between gap-3 p-4">

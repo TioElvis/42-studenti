@@ -38,6 +38,7 @@ _MAX_CONTENT_BYTES = 5 * 1024 * 1024  # 5 MiB
 async def status_(settings: SettingsDep, user: CurrentUser) -> GithubStatus:
     return GithubStatus(
         configured=settings.github_contrib_configured,
+        server_mode=settings.github_server_writes,
         linked=bool(user.github_username),
         username=user.github_username,
         can_archive=settings.can_contribute_archive(user.login),
@@ -114,9 +115,6 @@ async def contribute(
 ) -> ContributeOut:
     if not settings.github_contrib_configured:
         raise HTTPException(status_code=503, detail="Contributi GitHub non disponibili.")
-    token = github_user.github_token_of(user)
-    if not token or not user.github_username:
-        raise HTTPException(status_code=409, detail="Collega prima il tuo account GitHub.")
 
     if not content_service.section_allowed(data.section):
         raise HTTPException(status_code=404, detail="Sezione non valida.")
@@ -125,6 +123,14 @@ async def contribute(
         raise HTTPException(
             status_code=403, detail="Solo alcuni studenti possono contribuì all'archivio."
         )
+
+    # In server-token mode the backend commits for everyone (no per-student link
+    # needed); otherwise the student must have linked their own GitHub.
+    server = settings.github_server_writes
+    student_token = github_user.github_token_of(user)
+    if not server and (not student_token or not user.github_username):
+        raise HTTPException(status_code=409, detail="Collega prima il tuo account GitHub.")
+
     try:
         rel = content_service.confine_rel(data.path)  # never escapes assets/<section>/
     except NotFoundError as exc:
@@ -143,14 +149,30 @@ async def contribute(
     if len(raw) > _MAX_CONTENT_BYTES:
         raise HTTPException(status_code=413, detail="File troppo grande (max 5 MiB).")
 
+    who = user.github_username or user.login
     message = (data.message or "").strip() or f"Add {data.section}/{rel}"
     title = (data.title or "").strip() or message
-    body = f"Contributo di @{user.github_username} via 42 Studenti."
+    body = f"Contributo di @{who} via 42 Studenti."
     try:
-        if data.mode == "push":
+        if server:
+            url = await github_user.contribute_server(
+                settings=settings,
+                mode=data.mode,
+                section=data.section,
+                rel_path=rel,
+                content_b64=content_b64,
+                message=message,
+                title=title,
+                body=body,
+                author_name=user.github_username or user.display_name or user.login,
+                author_login=who,
+            )
+            if data.mode == "push":
+                content_service.invalidate_github_cache(data.section)
+        elif data.mode == "push":
             url = await github_user.contribute_direct_push(
                 settings=settings,
-                token=token,
+                token=student_token,
                 section=data.section,
                 rel_path=rel,
                 content_b64=content_b64,
@@ -161,7 +183,7 @@ async def contribute(
         else:
             url = await github_user.contribute_via_pr(
                 settings=settings,
-                token=token,
+                token=student_token,
                 login=user.github_username,
                 section=data.section,
                 rel_path=rel,

@@ -133,7 +133,7 @@ export function ContentBrowser({
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <SectionHeading label={t(labelKey)} desc={t(descKey)} />
         {gh?.configured &&
-          gh.linked &&
+          (gh.server_mode || gh.linked) &&
           (section === "material" || gh.can_archive) && (
             <Button size="sm" onClick={() => setContributeOpen(true)}>
               {t("content.contribute")}

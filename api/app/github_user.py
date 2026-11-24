@@ -136,7 +136,87 @@ async def contribute_direct_push(
         return url or f"https://github.com/{upstream}/blob/{base}/{full_path}"
 
 
-# --- contribution flow (fork -> branch -> commit -> PR) ----------------------
+async def contribute_server(
+    *,
+    settings: Settings,
+    mode: str,
+    section: str,
+    rel_path: str,
+    content_b64: str,
+    message: str,
+    title: str,
+    body: str,
+    author_name: str,
+    author_login: str,
+) -> str:
+    """Commit a contribution using the backend's own write token (private repo).
+
+    ``mode`` is "push" (straight to the base branch) or "pr" (a branch + PR).
+    The commit is attributed to the student via the author/committer fields.
+    """
+    token = settings.github_write_token
+    upstream = settings.github_repo
+    base = settings.github_branch
+    full_path = f"assets/{section}/{rel_path}"
+    author = {
+        "name": author_name or author_login,
+        "email": f"{author_login}@users.noreply.github.com",
+    }
+
+    async with httpx.AsyncClient(
+        base_url=_GITHUB_API, timeout=20.0, headers=_headers(token)
+    ) as client:
+        if mode == "push":
+            target_branch = base
+        else:
+            ref = await client.get(f"/repos/{upstream}/git/ref/heads/{base}")
+            if ref.status_code != 200:
+                raise GithubApiError("Couldn't read the base branch")
+            base_sha = ref.json().get("object", {}).get("sha")
+            target_branch = f"contrib/{section}-{int(time.time())}"
+            mk = await client.post(
+                f"/repos/{upstream}/git/refs",
+                json={"ref": f"refs/heads/{target_branch}", "sha": base_sha},
+            )
+            if mk.status_code not in (200, 201):
+                raise GithubApiError("Couldn't create the branch")
+
+        existing = await client.get(
+            f"/repos/{upstream}/contents/{full_path}", params={"ref": target_branch}
+        )
+        sha = existing.json().get("sha") if existing.status_code == 200 else None
+        payload: dict[str, object] = {
+            "message": message,
+            "content": content_b64,
+            "branch": target_branch,
+            "author": author,
+            "committer": author,
+        }
+        if sha:
+            payload["sha"] = sha
+        put = await client.put(f"/repos/{upstream}/contents/{full_path}", json=payload)
+        if put.status_code not in (200, 201):
+            raise GithubApiError("Couldn't commit the file (check the server token's access)")
+
+        if mode == "push":
+            data = put.json()
+            return (data.get("content") or {}).get("html_url") or (
+                f"https://github.com/{upstream}/blob/{base}/{full_path}"
+            )
+
+        pr = await client.post(
+            f"/repos/{upstream}/pulls",
+            json={"title": title, "head": target_branch, "base": base, "body": body},
+        )
+        if pr.status_code not in (200, 201):
+            raise GithubApiError("Couldn't open the pull request")
+        url = pr.json().get("html_url")
+        if not isinstance(url, str):
+            raise GithubApiError("GitHub didn't return a PR link")
+        return url
+
+
+# --- per-student contribution flow (fork -> branch -> commit -> PR) ----------
 
 
 async def contribute_via_pr(

@@ -160,6 +160,7 @@ export interface ContentFile {
 
 export interface GithubStatus {
   configured: boolean;
+  server_mode: boolean;
   linked: boolean;
   username: string | null;
   can_archive: boolean;

@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 
 
 class GithubStatus(BaseModel):
-    configured: bool  # is the GitHub OAuth app set up on this deployment?
+    configured: bool  # can anyone contribute on this deployment?
+    server_mode: bool = False  # backend commits with its own token (no linking)
     linked: bool
     username: str | None = None
     can_archive: bool = False  # may this student contribute to the archive section?

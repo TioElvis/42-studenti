@@ -21,6 +21,7 @@ os.environ["FORTY_TWO_CAMPUS_ID"] = "61"
 os.environ["GITHUB_REPO"] = ""
 os.environ["GITHUB_OAUTH_CLIENT_ID"] = ""
 os.environ["GITHUB_OAUTH_SECRET"] = ""
+os.environ["GITHUB_WRITE_TOKEN"] = ""
 
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 from sqlalchemy.ext.asyncio import create_async_engine  # noqa: E402

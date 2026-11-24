@@ -201,11 +201,14 @@ def section_allowed(section: str) -> bool:
 
 
 def _gh_headers(settings: Settings, *, api: bool) -> dict[str, str]:
-    # Public repo → unauthenticated reads (no token needed).
     headers = {"User-Agent": _GH_UA}
     if api:
         headers["Accept"] = "application/vnd.github+json"
         headers["X-GitHub-Api-Version"] = "2022-11-28"
+    # A server token lets us read a PRIVATE repo (public repos work without it).
+    token = getattr(settings, "github_write_token", "")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     return headers
 
 
@@ -264,12 +267,26 @@ async def _gh_listing(settings: Settings, section: str) -> ContentList:
 async def _gh_fetch_raw(settings: Settings, section: str, rel: str) -> bytes:
     repo = settings.github_repo
     branch = getattr(settings, "github_branch", "main")
-    url = f"{_GITHUB_RAW}/{repo}/{branch}/assets/{SECTIONS[section]}/{rel}"
+    full = f"assets/{SECTIONS[section]}/{rel}"
+    token = getattr(settings, "github_write_token", "")
+    # Private repo → the Contents API with the token (raw.* needs no auth only
+    # for public repos). The "raw" media type returns the file bytes directly.
+    if token:
+        url = f"{_GITHUB_API}/repos/{repo}/contents/{full}"
+        headers = {
+            "User-Agent": _GH_UA,
+            "Accept": "application/vnd.github.raw",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Authorization": f"Bearer {token}",
+        }
+        params = {"ref": branch}
+    else:
+        url = f"{_GITHUB_RAW}/{repo}/{branch}/{full}"
+        headers = {"User-Agent": _GH_UA}
+        params = {}
     try:
-        async with httpx.AsyncClient(
-            timeout=10.0, headers=_gh_headers(settings, api=False), follow_redirects=True
-        ) as client:
-            resp = await client.get(url)
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            resp = await client.get(url, headers=headers, params=params)
     except httpx.HTTPError as exc:
         raise _GitHubUnavailable() from exc
     if resp.status_code == 404:

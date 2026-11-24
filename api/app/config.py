@@ -89,6 +89,10 @@ class Settings(BaseSettings):
     github_repo: str = Field(default="", alias="GITHUB_REPO")
     github_branch: str = Field(default="main", alias="GITHUB_BRANCH")
     github_cache_ttl: int = Field(default=300, alias="GITHUB_CACHE_TTL")
+    # Server-side token (classic PAT with `repo`, or fine-grained Contents RW on
+    # the repo). When set, the backend reads a PRIVATE repo and commits
+    # contributions on students' behalf — no per-student link / collaborator.
+    github_write_token: str = Field(default="", alias="GITHUB_WRITE_TOKEN")
 
     @field_validator("github_repo")
     @classmethod
@@ -128,9 +132,17 @@ class Settings(BaseSettings):
         return bool(self.github_oauth_client_id and self.github_oauth_secret)
 
     @property
+    def github_server_writes(self) -> bool:
+        """Server-token mode: the backend does reads/writes with its own token."""
+        return bool(self.github_repo) and bool(self.github_write_token)
+
+    @property
     def github_contrib_configured(self) -> bool:
-        # Contributions need both an OAuth app (to link) and an upstream repo.
-        return self.github_oauth_configured and bool(self.github_repo)
+        # Contributions need an upstream repo, plus either the server token
+        # (backend commits for everyone) or an OAuth app (per-student tokens).
+        return bool(self.github_repo) and (
+            bool(self.github_write_token) or self.github_oauth_configured
+        )
 
     @field_validator("cookie_samesite")
     @classmethod
