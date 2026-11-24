@@ -1,6 +1,6 @@
 """composite index for notifications keyset + retention filter
 
-Revision ID: 0008_notifications_retention_index
+Revision ID: 0008_notif_retention_idx
 Revises: 0007_notifications
 Create Date: 2026-11-24
 """
@@ -11,7 +11,7 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0008_notifications_retention_index"
+revision: str = "0008_notif_retention_idx"
 down_revision: str | None = "0007_notifications"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
