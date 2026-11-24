@@ -125,44 +125,65 @@ async def contribute_via_pr(
     async with httpx.AsyncClient(
         base_url=_GITHUB_API, timeout=20.0, headers=_headers(token)
     ) as client:
-        # 1. Ensure the student has a fork (idempotent).
-        fork_resp = await client.post(f"/repos/{upstream}/forks")
-        _auth(fork_resp)
-        if fork_resp.status_code not in (200, 202):
-            raise GithubApiError("Couldn't create your fork")
-        fork_full = fork_resp.json().get("full_name") or f"{login}/{reponame}"
+        # 0. Does the student already have push access (owner / collaborator)?
+        #    If so we work on the upstream directly — you can't fork your own repo.
+        info = await client.get(f"/repos/{upstream}")
+        _auth(info)
+        if info.status_code == 404:
+            raise GithubApiError(
+                "Repository non accessibile: se è privato serve lo scope 'repo' "
+                "(o rendilo pubblico)."
+            )
+        if info.status_code != 200:
+            raise GithubApiError("Couldn't read the repository")
+        can_push = bool((info.json().get("permissions") or {}).get("push"))
 
-        # 2. Wait for the fork to be ready and read the base branch SHA.
-        base_sha: str | None = None
-        for _ in range(6):
-            ref = await client.get(f"/repos/{fork_full}/git/ref/heads/{base}")
-            if ref.status_code == 200:
-                base_sha = ref.json().get("object", {}).get("sha")
-                break
-            if ref.status_code not in (404, 409):
-                _auth(ref)
-                raise GithubApiError("Couldn't read your fork")
-            await asyncio.sleep(1.0)
+        if can_push:
+            work_repo = upstream
+            head_owner = upstream.split("/", 1)[0]
+            ref = await client.get(f"/repos/{work_repo}/git/ref/heads/{base}")
+            _auth(ref)
+            if ref.status_code != 200:
+                raise GithubApiError("Couldn't read the base branch")
+            base_sha = ref.json().get("object", {}).get("sha")
+        else:
+            # Fork flow for non-collaborators.
+            fork_resp = await client.post(f"/repos/{upstream}/forks")
+            _auth(fork_resp)
+            if fork_resp.status_code not in (200, 202):
+                raise GithubApiError("Couldn't create your fork")
+            work_repo = fork_resp.json().get("full_name") or f"{login}/{reponame}"
+            head_owner = login
+            base_sha = None
+            for _ in range(6):  # a fresh fork is created asynchronously
+                fref = await client.get(f"/repos/{work_repo}/git/ref/heads/{base}")
+                if fref.status_code == 200:
+                    base_sha = fref.json().get("object", {}).get("sha")
+                    break
+                if fref.status_code not in (404, 409):
+                    _auth(fref)
+                    raise GithubApiError("Couldn't read your fork")
+                await asyncio.sleep(1.0)
         if not base_sha:
-            raise GithubApiError("Your fork isn't ready yet — try again in a moment")
+            raise GithubApiError("La tua fork non è pronta — riprova tra un attimo")
 
-        # 3. Create a working branch on the fork.
+        # Create a working branch on the work repo.
         new_branch = f"contrib/{section}-{int(time.time())}"
         mk = await client.post(
-            f"/repos/{fork_full}/git/refs",
+            f"/repos/{work_repo}/git/refs",
             json={"ref": f"refs/heads/{new_branch}", "sha": base_sha},
         )
         _auth(mk)
         if mk.status_code not in (200, 201):
-            raise GithubApiError("Couldn't create a branch on your fork")
+            raise GithubApiError("Couldn't create a branch")
 
-        # 4. If the file already exists on that branch, we need its blob sha.
+        # If the file already exists on that branch, we need its blob sha.
         existing = await client.get(
-            f"/repos/{fork_full}/contents/{full_path}", params={"ref": new_branch}
+            f"/repos/{work_repo}/contents/{full_path}", params={"ref": new_branch}
         )
         sha = existing.json().get("sha") if existing.status_code == 200 else None
 
-        # 5. Commit the file on the fork branch.
+        # Commit the file.
         payload: dict[str, object] = {
             "message": message,
             "content": content_b64,
@@ -170,15 +191,20 @@ async def contribute_via_pr(
         }
         if sha:
             payload["sha"] = sha
-        put = await client.put(f"/repos/{fork_full}/contents/{full_path}", json=payload)
+        put = await client.put(f"/repos/{work_repo}/contents/{full_path}", json=payload)
         _auth(put)
         if put.status_code not in (200, 201):
-            raise GithubApiError("Couldn't commit the file to your fork")
+            raise GithubApiError("Couldn't commit the file")
 
-        # 6. Open the PR against the upstream repo.
+        # Open the PR against the upstream repo (head may be the fork's owner).
         pr = await client.post(
             f"/repos/{upstream}/pulls",
-            json={"title": title, "head": f"{login}:{new_branch}", "base": base, "body": body},
+            json={
+                "title": title,
+                "head": f"{head_owner}:{new_branch}",
+                "base": base,
+                "body": body,
+            },
         )
         _auth(pr)
         if pr.status_code not in (200, 201):
