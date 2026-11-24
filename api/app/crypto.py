@@ -10,22 +10,38 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import logging
 from functools import lru_cache
 
 from cryptography.fernet import Fernet, InvalidToken
 
 from .config import get_settings
 
+logger = logging.getLogger("app.crypto")
+
+
+def _build_fernet(token_key: str, jwt_secret: str) -> Fernet:
+    """A Fernet from ``TOKEN_ENCRYPTION_KEY`` if it's a valid key, else one
+    derived from ``JWT_SECRET``. An invalid key is a config mistake that must
+    not take login down — we warn and fall back instead of raising."""
+    key = (token_key or "").strip()
+    if key:
+        try:
+            return Fernet(key.encode())
+        except (ValueError, TypeError):
+            logger.warning(
+                "TOKEN_ENCRYPTION_KEY is not a valid Fernet key "
+                "(must be 44 url-safe base64 chars); deriving from JWT_SECRET instead."
+            )
+    # Derive a valid 32-byte urlsafe-base64 Fernet key from the JWT secret.
+    digest = hashlib.sha256(jwt_secret.encode()).digest()
+    return Fernet(base64.urlsafe_b64encode(digest))
+
 
 @lru_cache
 def _fernet() -> Fernet:
     settings = get_settings()
-    key = settings.token_encryption_key.strip()
-    if key:
-        return Fernet(key.encode())
-    # Derive a valid 32-byte urlsafe-base64 Fernet key from the JWT secret.
-    digest = hashlib.sha256(settings.jwt_secret.encode()).digest()
-    return Fernet(base64.urlsafe_b64encode(digest))
+    return _build_fernet(settings.token_encryption_key, settings.jwt_secret)
 
 
 def encrypt(plaintext: str) -> str:
