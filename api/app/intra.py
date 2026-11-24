@@ -77,6 +77,26 @@ _PROFILE_CACHE_MAX = 512
 _COMMON_CORE_CURSUS_ID = 21
 _COMMON_CORE_SLUG = "42cursus"
 
+# Internal vs external classification for official events (mirrors 42's own
+# notion): a 42 ``kind`` of ``extern``/``partnership`` is External; so is an
+# event whose ``location`` is a real off-campus address (street/venue) — unless
+# the location mentions the campus, which keeps it Internal.
+_EXTERNAL_KINDS = {"extern", "partnership"}
+_CAMPUS_LOC_HINTS = ("42", "cluster", "campus")
+_EXTERNAL_LOC_HINTS = ("via ", "viale", "piazza", "largo ", "corso ", "strada ", "(rm)", "(roma)")
+
+
+def _event_is_internal(kind: str | None, location: str | None) -> bool:
+    if (kind or "").lower() in _EXTERNAL_KINDS:
+        return False
+    loc = (location or "").lower()
+    # Location override: a clear off-campus address makes it external, but a
+    # location that names the campus (e.g. "42 Roma", "Cluster 1") stays internal.
+    if loc and not any(h in loc for h in _CAMPUS_LOC_HINTS):
+        if any(h in loc for h in _EXTERNAL_LOC_HINTS):
+            return False
+    return True
+
 
 def _main_cursus(user: object) -> dict | None:
     """The student's **common-core** (42cursus) cursus_user, or None.
@@ -234,7 +254,7 @@ class EventsProvider:
 
         now_ts = time.time()
         upcoming = [
-            _to_out(e, campus_id)
+            _to_out(e)
             for e in raw
             if e.end_at is None or e.end_at.timestamp() >= now_ts
         ]
@@ -348,11 +368,7 @@ class EventsProvider:
         )
 
 
-def _to_out(event: Event, campus_id: int) -> EventOut:
-    # Internal = scoped to our campus only; a multi-campus event (the feed also
-    # surfaces shared online/partner events spanning several campuses) is external.
-    campus_ids = event.campus_ids or []
-    internal = not campus_ids or set(campus_ids) <= {campus_id}
+def _to_out(event: Event) -> EventOut:
     return EventOut(
         id=event.id,
         name=event.name,
@@ -363,5 +379,5 @@ def _to_out(event: Event, campus_id: int) -> EventOut:
         end_at=event.end_at,
         max_people=event.max_people,
         nbr_subscribers=event.nbr_subscribers,
-        internal=internal,
+        internal=_event_is_internal(event.kind, event.location),
     )
