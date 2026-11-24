@@ -60,21 +60,41 @@ async def test_events_feed_returns_only_upcoming(client):
 
 
 _SCOPE_PAYLOAD = [
+    # Campus activity (internal kind, on-campus location) -> Interno.
     {
         "id": 10,
-        "name": "Evento solo Roma",
-        "kind": "event",
+        "name": "Meetup al cluster",
+        "kind": "meet_up",
+        "location": "Cluster 1",
         "begin_at": "2999-01-01T10:00:00.000Z",
         "end_at": "2999-01-01T12:00:00.000Z",
-        "campus_ids": [61],
     },
+    # External kind -> Esterno (even though single-campus, like XmasDev).
     {
         "id": 11,
-        "name": "Conferenza multi-campus",
-        "kind": "conference",
+        "name": "Conferenza XmasDev",
+        "kind": "extern",
+        "location": "Seraphicum",
         "begin_at": "2999-01-02T10:00:00.000Z",
         "end_at": "2999-01-02T12:00:00.000Z",
-        "campus_ids": [61, 9, 14],
+    },
+    # Internal-ish kind but off-campus address -> Esterno via location override.
+    {
+        "id": 12,
+        "name": "Conferenza fuori sede",
+        "kind": "conference",
+        "location": "Via del Serafico 1 (RM)",
+        "begin_at": "2999-01-03T10:00:00.000Z",
+        "end_at": "2999-01-03T12:00:00.000Z",
+    },
+    # Conference whose location names the campus -> stays Interno.
+    {
+        "id": 13,
+        "name": "Conferenza in campus",
+        "kind": "conference",
+        "location": "42 Roma, Aula Magna",
+        "begin_at": "2999-01-04T10:00:00.000Z",
+        "end_at": "2999-01-04T12:00:00.000Z",
     },
 ]
 
@@ -95,6 +115,7 @@ async def test_events_internal_external_flag(client):
 
     assert resp.status_code == 200
     internal_by_id = {e["id"]: e["internal"] for e in resp.json()}
-    assert internal_by_id == {10: True, 11: False}  # single-campus vs multi-campus
+    # 10 campus meetup, 13 conference in campus -> Interno; 11 extern, 12 off-campus -> Esterno.
+    assert internal_by_id == {10: True, 11: False, 12: False, 13: True}
 
     deps._events_provider = None
