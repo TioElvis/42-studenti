@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 from intra42 import AsyncClient, Event
 from intra42.exceptions import FortyTwoAPIError
@@ -66,6 +66,13 @@ class IntraUserInfo:
 def _extra(user: object) -> dict:
     return getattr(user, "model_extra", None) or {}
 
+
+# Sort sentinel for events with no begin_at (tz-aware, so it compares safely
+# with 42's tz-aware datetimes).
+_FAR_FUTURE = datetime.max.replace(tzinfo=timezone.utc)
+
+# Cap the per-login profile cache so it can't grow without bound.
+_PROFILE_CACHE_MAX = 512
 
 _COMMON_CORE_CURSUS_ID = 21
 _COMMON_CORE_SLUG = "42cursus"
@@ -231,7 +238,9 @@ class EventsProvider:
             for e in raw
             if e.end_at is None or e.end_at.timestamp() >= now_ts
         ]
-        upcoming.sort(key=lambda e: (e.begin_at is None, e.begin_at))
+        # Undated events sort last; the sentinel avoids comparing None to None
+        # (a TypeError) when two or more events have no begin_at.
+        upcoming.sort(key=lambda e: (e.begin_at is None, e.begin_at or _FAR_FUTURE))
         return upcoming
 
 
@@ -301,6 +310,10 @@ class EventsProvider:
             if cached and time.monotonic() - cached[0] < self._settings.events_cache_ttl:
                 return cached[1]
             info = await self._fetch_user_info(login)
+            # Evict the oldest entry if the cache is full (bounded memory).
+            if len(self._profile_cache) >= _PROFILE_CACHE_MAX and login not in self._profile_cache:
+                oldest = min(self._profile_cache, key=lambda k: self._profile_cache[k][0])
+                self._profile_cache.pop(oldest, None)
             self._profile_cache[login] = (time.monotonic(), info)
             return info
 
