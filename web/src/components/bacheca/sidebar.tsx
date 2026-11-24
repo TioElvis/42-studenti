@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { dateBlock } from "@/lib/time";
 import { api } from "@/lib/api";
 import { useI18n } from "@/providers/i18n-provider";
+import { useRealtime } from "@/providers/realtime";
 import type { EventItem, Post } from "@/lib/types";
 
 export function Sidebar({
@@ -53,20 +54,71 @@ function CommunityEvents({
   const [polls, setPolls] = React.useState<Post[] | null>(null);
   const [failed, setFailed] = React.useState(false);
 
-  React.useEffect(() => {
-    let cancelled = false;
+  const refetch = React.useCallback(() => {
     api
       .listPosts({ postType: "sondaggio", limit: 3 })
-      .then((page) => {
-        if (!cancelled) setPolls(page.items);
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .then((page) => setPolls(page.items))
+      .catch(() => setFailed(true));
   }, []);
+
+  React.useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  // Live: keep the teaser in sync with new/updated/removed/voted sondaggi.
+  useRealtime((event) => {
+    switch (event.type) {
+      case "post.created":
+        if (event.data.post_type !== "sondaggio") return;
+        setPolls((prev) =>
+          prev ? [event.data, ...prev.filter((p) => p.id !== event.data.id)].slice(0, 3) : prev,
+        );
+        break;
+      case "post.updated":
+        if (event.data.post_type !== "sondaggio") return;
+        setPolls((prev) =>
+          prev ? prev.map((p) => (p.id === event.data.id ? event.data : p)) : prev,
+        );
+        break;
+      case "post.deleted":
+        setPolls((prev) => {
+          if (!prev || !prev.some((p) => p.id === event.data.id)) return prev;
+          refetch(); // backfill to 3 after one drops off
+          return prev.filter((p) => p.id !== event.data.id);
+        });
+        break;
+      case "post.rsvp":
+        setPolls((prev) =>
+          prev
+            ? prev.map((p) =>
+                p.id === event.data.post_id
+                  ? { ...p, rsvp_count: event.data.rsvp_count, rsvp_full: event.data.rsvp_full }
+                  : p,
+              )
+            : prev,
+        );
+        break;
+      case "post.poll_vote": {
+        const counts = new Map(event.data.options.map((o) => [o.id, o.vote_count]));
+        setPolls((prev) =>
+          prev
+            ? prev.map((p) =>
+                p.id === event.data.post_id
+                  ? {
+                      ...p,
+                      poll_options: p.poll_options.map((o) => ({
+                        ...o,
+                        vote_count: counts.get(o.id) ?? o.vote_count,
+                      })),
+                    }
+                  : p,
+              )
+            : prev,
+        );
+        break;
+      }
+    }
+  });
 
   return (
     <Window className="retro-shadow">
@@ -89,13 +141,23 @@ function CommunityEvents({
           </p>
         )}
         {polls?.map((p) => {
+          const isOptions = p.poll_mode === "options";
+          const votes = p.poll_options.reduce((sum, o) => sum + o.vote_count, 0);
           const body = (
             <div className="min-w-0 flex-1">
               <div className="truncate font-mono text-xs font-bold">{p.title ?? p.content}</div>
               <div className="truncate font-mono text-[11px] text-[var(--text-muted)]">
-                {p.rsvp_count}
-                {p.max_participants ? `/${p.max_participants}` : ""} {t("sidebar.inWord")}
-                {p.rsvp_full ? ` · ${t("common.full")}` : ""}
+                {isOptions ? (
+                  <>
+                    {votes} {t("sondaggio.votesWord")}
+                  </>
+                ) : (
+                  <>
+                    {p.rsvp_count}
+                    {p.max_participants ? `/${p.max_participants}` : ""} {t("sidebar.inWord")}
+                    {p.rsvp_full ? ` · ${t("common.full")}` : ""}
+                  </>
+                )}
               </div>
             </div>
           );
