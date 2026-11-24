@@ -259,25 +259,26 @@ export function Feed() {
           </Button>
         </div>
 
-        <div className="mb-5 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            aria-pressed={sondaggiOnly}
-            onClick={() => setSondaggiOnly((v) => !v)}
-            className={cn(
-              "border px-3 py-1.5 font-mono text-xs transition-colors",
-              sondaggiOnly
-                ? "border-[var(--border)] bg-[var(--primary)] text-[var(--primary-fg)] retro-shadow-sm"
-                : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]",
-            )}
-          >
-            {t("cat.sondaggi")}
-          </button>
-          <span aria-hidden className="mx-1 hidden h-5 w-px bg-[var(--border)] sm:block" />
+        <div className="mb-5">
           <CategoryPills
             selected={categories}
             onToggle={toggleCategory}
             onClear={() => setCategories(new Set())}
+            trailing={
+              <button
+                type="button"
+                aria-pressed={sondaggiOnly}
+                onClick={() => setSondaggiOnly((v) => !v)}
+                className={cn(
+                  "border px-3 py-1.5 font-mono text-xs transition-colors",
+                  sondaggiOnly
+                    ? "border-[var(--border)] bg-[var(--primary)] text-[var(--primary-fg)] retro-shadow-sm"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]",
+                )}
+              >
+                {t("cat.sondaggi")}
+              </button>
+            }
           />
         </div>
 

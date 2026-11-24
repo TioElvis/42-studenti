@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { cn } from "@/lib/utils";
 import { CATEGORIES } from "@/lib/categories";
 import { useI18n } from "@/providers/i18n-provider";
@@ -13,10 +15,13 @@ export function CategoryPills({
   selected,
   onToggle,
   onClear,
+  trailing,
 }: {
   selected: Set<PostCategory>;
   onToggle: (category: PostCategory) => void;
   onClear: () => void;
+  /** Extra pill(s) rendered inline after the categories (e.g. a Sondaggi toggle). */
+  trailing?: ReactNode;
 }) {
   const { t } = useI18n();
 
@@ -52,6 +57,7 @@ export function CategoryPills({
           </button>
         );
       })}
+      {trailing}
     </div>
   );
 }
