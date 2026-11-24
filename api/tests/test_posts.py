@@ -30,12 +30,12 @@ async def test_create_and_list_post(client):
 
 async def test_category_filter(client):
     await _create_post(client, category="studio")
-    await _create_post(client, category="vita_romana")
-    resp = await client.get("/posts", params={"category": "vita_romana"})
+    await _create_post(client, category="evento_casuale")
+    resp = await client.get("/posts", params={"category": "evento_casuale"})
     assert resp.status_code == 200
     data = resp.json()["items"]
     assert len(data) == 1
-    assert data[0]["category"] == "vita_romana"
+    assert data[0]["category"] == "evento_casuale"
 
 
 async def test_invalid_category_rejected(client):

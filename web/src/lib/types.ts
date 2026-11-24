@@ -4,7 +4,6 @@ export type PostCategory =
   | "studio"
   | "cerco_team"
   | "evento_casuale"
-  | "vita_romana"
   | "mercatino"
   | "off_topic";
 

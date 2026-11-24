@@ -14,7 +14,6 @@ class PostCategory(str, enum.Enum):
     STUDIO = "studio"
     CERCO_TEAM = "cerco_team"
     EVENTO_CASUALE = "evento_casuale"
-    VITA_ROMANA = "vita_romana"
     MERCATINO = "mercatino"
     OFF_TOPIC = "off_topic"
 
