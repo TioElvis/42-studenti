@@ -344,6 +344,7 @@ const it = {
     evento_casuale: "Evento casuale",
     mercatino: "Mercatino / Cerco",
     off_topic: "Off-topic",
+    sondaggi: "Sondaggi",
   },
   catHint: {
     studio: "coding, minishell, peer learning, prep esami",
@@ -688,6 +689,7 @@ const en: typeof it = {
     evento_casuale: "Casual event",
     mercatino: "Market / Wanted",
     off_topic: "Off-topic",
+    sondaggi: "Polls",
   },
   catHint: {
     studio: "coding, minishell, peer learning, exam prep",

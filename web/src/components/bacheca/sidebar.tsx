@@ -16,10 +16,13 @@ import type { EventItem, Post } from "@/lib/types";
 export function Sidebar({
   className,
   onOpenPost,
+  onShowSondaggi,
 }: {
   className?: string;
   /** Opens a post in the shared detail dialog (owned by the Feed). */
   onOpenPost?: (postId: number) => void;
+  /** Activates the Sondaggi filter on the Bacheca (owned by the Feed). */
+  onShowSondaggi?: () => void;
 }) {
   return (
     <aside className={cn("flex min-w-0 flex-col gap-4", className)}>
@@ -32,14 +35,20 @@ export function Sidebar({
         <UpcomingEvents />
       </div>
       <div className="order-3 lg:order-2">
-        <CommunityEvents onOpenPost={onOpenPost} />
+        <CommunityEvents onOpenPost={onOpenPost} onShowSondaggi={onShowSondaggi} />
       </div>
     </aside>
   );
 }
 
 /** Card teaser for the "eventi non ufficiali": the latest community sondaggi. */
-function CommunityEvents({ onOpenPost }: { onOpenPost?: (postId: number) => void }) {
+function CommunityEvents({
+  onOpenPost,
+  onShowSondaggi,
+}: {
+  onOpenPost?: (postId: number) => void;
+  onShowSondaggi?: () => void;
+}) {
   const { t } = useI18n();
   const [polls, setPolls] = React.useState<Post[] | null>(null);
   const [failed, setFailed] = React.useState(false);
@@ -93,29 +102,26 @@ function CommunityEvents({ onOpenPost }: { onOpenPost?: (postId: number) => void
           const cls =
             "flex w-full items-center gap-3 border border-[var(--border-subtle)] p-2 text-left transition-colors hover:border-[var(--border)] hover:bg-[var(--surface-2)]";
           // Clicking opens the full post dialog (handled by the Feed); without a
-          // handler we fall back to navigating to the Comunità page.
-          return onOpenPost ? (
+          // handler we fall back to activating the Sondaggi filter.
+          return (
             <button
               key={p.id}
               type="button"
-              onClick={() => onOpenPost(p.id)}
+              onClick={() => (onOpenPost ? onOpenPost(p.id) : onShowSondaggi?.())}
               aria-label={t("sidebar.openPost", { name: p.title ?? t("sidebar.pollFallback") })}
               className={cls}
             >
               {body}
             </button>
-          ) : (
-            <Link key={p.id} href="/comunita" className={cls}>
-              {body}
-            </Link>
           );
         })}
-        <Link
-          href="/comunita"
+        <button
+          type="button"
+          onClick={() => onShowSondaggi?.()}
           className="mt-1 text-center font-mono text-xs text-[var(--primary)] hover:underline"
         >
           {t("sidebar.communityAll")}
-        </Link>
+        </button>
       </div>
     </Window>
   );

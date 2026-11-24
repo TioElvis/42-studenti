@@ -83,14 +83,15 @@ export const api = {
 
   listPosts: (
     opts: {
-      category?: PostCategory;
+      categories?: PostCategory[];
       postType?: PostType;
       cursor?: number | null;
       limit?: number;
     } = {},
   ) => {
     const p = new URLSearchParams();
-    if (opts.category) p.set("category", opts.category);
+    // Repeat ?category= for each selected category (any-of multi-select).
+    opts.categories?.forEach((c) => p.append("category", c));
     if (opts.postType) p.set("post_type", opts.postType);
     if (opts.cursor != null) p.set("cursor", String(opts.cursor));
     if (opts.limit != null) p.set("limit", String(opts.limit));

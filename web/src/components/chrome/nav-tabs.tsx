@@ -8,7 +8,6 @@ import { useI18n } from "@/providers/i18n-provider";
 
 const TABS = [
   { href: "/", key: "nav.bacheca" },
-  { href: "/comunita", key: "nav.comunita" },
   { href: "/eventi", key: "nav.eventi" },
   { href: "/studenti", key: "nav.studenti" },
   { href: "/club", key: "nav.club" },

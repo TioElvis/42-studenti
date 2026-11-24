@@ -26,15 +26,16 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 async def list_posts(
     session: SessionDep,
     user: CurrentUser,
-    category: PostCategory | None = Query(default=None),
+    category: list[PostCategory] | None = Query(default=None),
     post_type: PostType | None = Query(default=None),
     cursor: int | None = Query(default=None, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
 ) -> PostPage:
+    # ``category`` may be repeated (?category=a&category=b) for a multi-select.
     return await posts_service.list_posts(
         session,
         viewer_id=user.id,
-        category=category,
+        categories=category,
         post_type=post_type,
         cursor=cursor,
         limit=limit,
