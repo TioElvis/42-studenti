@@ -91,6 +91,24 @@ class Settings(BaseSettings):
     github_token: str = Field(default="", alias="GITHUB_TOKEN")  # optional
     github_cache_ttl: int = Field(default=300, alias="GITHUB_CACHE_TTL")
 
+    # --- Optional: let students link their own GitHub to contribute to assets/ ---
+    # A GitHub OAuth App (the feature is hidden until these are set).
+    github_oauth_client_id: str = Field(default="", alias="GITHUB_OAUTH_CLIENT_ID")
+    github_oauth_secret: str = Field(default="", alias="GITHUB_OAUTH_SECRET")
+    github_oauth_callback_url: str = Field(
+        default="http://localhost:9000/github/link/callback",
+        alias="GITHUB_OAUTH_CALLBACK_URL",
+    )
+
+    @property
+    def github_oauth_configured(self) -> bool:
+        return bool(self.github_oauth_client_id and self.github_oauth_secret)
+
+    @property
+    def github_contrib_configured(self) -> bool:
+        # Contributions need both an OAuth app (to link) and an upstream repo.
+        return self.github_oauth_configured and bool(self.github_repo)
+
     @field_validator("cookie_samesite")
     @classmethod
     def _valid_samesite(cls, v: str) -> str:

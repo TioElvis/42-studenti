@@ -16,10 +16,17 @@ import { Button } from "@/components/ui/button";
 import { Window, WindowBar } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ContributeModal } from "./contribute-modal";
 import { cn } from "@/lib/utils";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, githubLinkUrl } from "@/lib/api";
 import { useI18n } from "@/providers/i18n-provider";
-import type { ContentEntry, ContentFile, ContentKind, ContentSection } from "@/lib/types";
+import type {
+  ContentEntry,
+  ContentFile,
+  ContentKind,
+  ContentSection,
+  GithubStatus,
+} from "@/lib/types";
 
 const ICON: Record<ContentKind, typeof File> = {
   text: FileText,
@@ -50,6 +57,8 @@ export function ContentBrowser({
   const [fileError, setFileError] = React.useState<string | null>(null);
   const [loadingFile, setLoadingFile] = React.useState(false);
   const [query, setQuery] = React.useState("");
+  const [gh, setGh] = React.useState<GithubStatus | null>(null);
+  const [contributeOpen, setContributeOpen] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -65,6 +74,22 @@ export function ContentBrowser({
       cancelled = true;
     };
   }, [section, t]);
+
+  // GitHub contribution availability (feature hidden unless configured).
+  React.useEffect(() => {
+    let cancelled = false;
+    api
+      .githubStatus()
+      .then((s) => {
+        if (!cancelled) setGh(s);
+      })
+      .catch(() => {
+        /* status is optional UI sugar — ignore errors */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const open = React.useCallback(
     (entry: ContentEntry) => {
@@ -104,7 +129,19 @@ export function ContentBrowser({
 
   return (
     <section>
-      <SectionHeading label={t(labelKey)} desc={t(descKey)} />
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <SectionHeading label={t(labelKey)} desc={t(descKey)} />
+        {gh?.configured &&
+          (gh.linked ? (
+            <Button size="sm" onClick={() => setContributeOpen(true)}>
+              {t("content.contribute")}
+            </Button>
+          ) : (
+            <Button asChild size="sm" variant="outline">
+              <a href={githubLinkUrl()}>{t("content.connectGithub")}</a>
+            </Button>
+          ))}
+      </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,320px)_1fr]">
         {/* File list */}
@@ -241,6 +278,8 @@ export function ContentBrowser({
           </div>
         </Window>
       </div>
+
+      <ContributeModal open={contributeOpen} onOpenChange={setContributeOpen} section={section} />
     </section>
   );
 }

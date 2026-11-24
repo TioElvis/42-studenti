@@ -26,6 +26,7 @@ from .routers import (
     content,
     events,
     follows,
+    github,
     me,
     notifications,
     posts,
@@ -135,6 +136,7 @@ def create_app() -> FastAPI:
     app.include_router(profile.router)
     app.include_router(students.router)
     app.include_router(follows.router)
+    app.include_router(github.router)
     app.include_router(notifications.router)
     app.include_router(ws.router)
 

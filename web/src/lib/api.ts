@@ -13,6 +13,7 @@ import type {
   ContentFile,
   ContentList,
   ContentSection,
+  GithubStatus,
   NotificationFilter,
   NotificationPage,
   NotificationSettings,
@@ -77,6 +78,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 /** Absolute URL to begin the 42 OAuth login (full-page navigation). */
 export function loginUrl(): string {
   return `${API_BASE}/auth/42`;
+}
+
+/** Absolute URL to begin linking a GitHub account (full-page navigation). */
+export function githubLinkUrl(): string {
+  return `${API_BASE}/github/link`;
 }
 
 export const api = {
@@ -179,4 +185,18 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
+
+  githubStatus: () => request<GithubStatus>("/github/status"),
+  unlinkGithub: () => request<void>("/github/link", { method: "DELETE" }),
+  contributeContent: (body: {
+    section: ContentSection;
+    path: string;
+    content: string;
+    encoding?: "utf-8" | "base64";
+    message?: string | null;
+    title?: string | null;
+  }) => request<{ pr_url: string }>("/github/contribute", {
+    method: "POST",
+    body: JSON.stringify(body),
+  }),
 };

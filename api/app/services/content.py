@@ -191,6 +191,15 @@ def _safe_rel(rel: str) -> str:
     return cleaned
 
 
+def confine_rel(rel: str) -> str:
+    """Public: validate a relative path stays under the section (no traversal)."""
+    return _safe_rel(rel)
+
+
+def section_allowed(section: str) -> bool:
+    return section in SECTIONS
+
+
 def _gh_headers(settings: Settings, *, api: bool) -> dict[str, str]:
     headers = {"User-Agent": _GH_UA}
     if api:
