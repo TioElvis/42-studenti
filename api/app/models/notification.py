@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Enum as SAEnum, ForeignKey
+from sqlalchemy import Boolean, Enum as SAEnum, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
@@ -16,6 +16,10 @@ if TYPE_CHECKING:
 
 class Notification(Base, TimestampMixin):
     __tablename__ = "notifications"
+    # Keyset list is: recipient_id = ? AND created_at >= cutoff, ordered by id.
+    __table_args__ = (
+        Index("ix_notifications_recipient_created", "recipient_id", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     recipient_id: Mapped[int] = mapped_column(

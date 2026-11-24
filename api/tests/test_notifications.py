@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import func, select
+
 from app.database import get_sessionmaker
-from app.models.enums import PostCategory, PostNotify
+from app.models.enums import NotificationType, PostCategory, PostNotify
+from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.comment import CommentCreate
 from app.schemas.notification import NotificationSettingsUpdate
@@ -103,3 +108,56 @@ async def test_mark_all_read_and_settings_update(engine, users):
             s, user=bob_u, data=NotificationSettingsUpdate(notify_follows=False, notify_posts=PostNotify.OFF)
         )
         assert res.notify_follows is False and res.notify_posts == PostNotify.OFF
+
+
+async def test_retention_excludes_and_purges_old(engine, users):
+    alice, bob = users["alice"], users["bob"]
+    notif_svc._last_purge_monotonic = -1e9  # force the throttled purge to run
+    maker = get_sessionmaker()
+    old = datetime.now(timezone.utc) - timedelta(days=40)
+    async with maker() as s:
+        s.add(
+            Notification(
+                recipient_id=bob.id, actor_id=alice.id, type=NotificationType.FOLLOW, created_at=old
+            )
+        )
+        s.add(Notification(recipient_id=bob.id, actor_id=alice.id, type=NotificationType.FOLLOW))
+        await s.commit()
+    async with maker() as s:
+        page = await notif_svc.list_notifications(s, user_id=bob.id, cursor=None, limit=20)
+        assert len(page.items) == 1  # the 40-day-old one is excluded
+        assert await notif_svc.unread_count(s, bob.id) == 1
+    async with maker() as s:
+        total = await s.scalar(
+            select(func.count(Notification.id)).where(Notification.recipient_id == bob.id)
+        )
+        assert total == 1  # and physically purged
+
+
+async def test_list_filter_by_kind(engine, users):
+    alice, bob = users["alice"], users["bob"]
+    maker = get_sessionmaker()
+    async with maker() as s:
+        for t in (
+            NotificationType.POST,
+            NotificationType.COMMENT,
+            NotificationType.REPLY,
+            NotificationType.FOLLOW,
+        ):
+            s.add(Notification(recipient_id=bob.id, actor_id=alice.id, type=t))
+        await s.commit()
+    async with maker() as s:
+        posts = await notif_svc.list_notifications(
+            s, user_id=bob.id, cursor=None, limit=20, kinds={NotificationType.POST}
+        )
+        assert {i.type for i in posts.items} == {"post"}
+        comments = await notif_svc.list_notifications(
+            s,
+            user_id=bob.id,
+            cursor=None,
+            limit=20,
+            kinds={NotificationType.COMMENT, NotificationType.REPLY},
+        )
+        assert {i.type for i in comments.items} == {"comment", "reply"}
+        all_kinds = await notif_svc.list_notifications(s, user_id=bob.id, cursor=None, limit=20)
+        assert len(all_kinds.items) == 4

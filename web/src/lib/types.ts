@@ -181,6 +181,8 @@ export interface NotificationPage {
   unread: number;
 }
 
+export type NotificationFilter = "all" | "posts" | "comments" | "follows";
+
 export type PostNotify = "off" | "followed" | "all";
 
 export interface NotificationSettings {
