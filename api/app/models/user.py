@@ -70,6 +70,11 @@ class User(Base, TimestampMixin):
         DateTime(timezone=True), nullable=True
     )
 
+    # Optional linked GitHub account (for contributing to assets/ via PR).
+    # The OAuth token is Fernet-encrypted at rest and never leaves the backend.
+    github_username: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    github_token_enc: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     posts: Mapped[list["Post"]] = relationship(
         back_populates="author", cascade="all, delete-orphan"
     )

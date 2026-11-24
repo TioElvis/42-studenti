@@ -158,6 +158,12 @@ export interface ContentFile {
   content: string;
 }
 
+export interface GithubStatus {
+  configured: boolean;
+  linked: boolean;
+  username: string | null;
+}
+
 export interface ActivityStats {
   posts: number;
   comments: number;
