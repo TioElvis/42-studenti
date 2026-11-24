@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { useRealtime } from "@/providers/realtime";
 import { useAuth } from "@/providers/auth-provider";
 import { useI18n } from "@/providers/i18n-provider";
-import type { LikeState, Post, PostCategory, RsvpState } from "@/lib/types";
+import type { LikeState, PollOption, Post, PostCategory, RsvpState } from "@/lib/types";
 
 const PAGE_SIZE = 15;
 
@@ -179,6 +179,24 @@ export function Feed() {
           ),
         );
         break;
+      case "post.poll_vote": {
+        const counts = new Map(event.data.options.map((o) => [o.id, o.vote_count]));
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === event.data.post_id
+              ? {
+                  ...p,
+                  // Counts are authoritative; keep this viewer's own voted flags.
+                  poll_options: p.poll_options.map((o) => ({
+                    ...o,
+                    vote_count: counts.get(o.id) ?? o.vote_count,
+                  })),
+                }
+              : p,
+          ),
+        );
+        break;
+      }
       case "comment.created":
       case "comment.deleted":
         setPosts((prev) =>
@@ -202,6 +220,10 @@ export function Feed() {
     });
   }
 
+  function handlePoll(post: Post, options: PollOption[]) {
+    patchPost(post.id, { poll_options: options });
+  }
+
   async function handleSubmit(values: PostFormValues) {
     const body = {
       title: values.title || null,
@@ -209,6 +231,10 @@ export function Feed() {
       category: values.category,
       post_type: values.postType,
       max_participants: values.maxParticipants,
+      poll_mode: values.pollMode,
+      poll_multi: values.pollMulti,
+      options: values.options,
+      participate: values.participate,
     };
     if (editing) {
       const updated = await api.updatePost(editing.id, {
@@ -313,6 +339,7 @@ export function Feed() {
                   onOpen={(p) => setDetailPostId(p.id)}
                   onLike={handleLike}
                   onRsvp={handleRsvp}
+                  onPoll={handlePoll}
                   onOpenAttendees={(p) => setAttendeesPostId(p.id)}
                   onEdit={(p) => {
                     setEditing(p);

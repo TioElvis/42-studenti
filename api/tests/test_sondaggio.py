@@ -4,7 +4,14 @@ from __future__ import annotations
 
 
 async def _make(client, **overrides):
-    payload = {"content": "Se vedemo?", "category": "evento_casuale", "post_type": "sondaggio"}
+    # participate=False so these RSVP/capacity tests start with an empty poll
+    # (the author auto-join default is covered in test_polls.py).
+    payload = {
+        "content": "Se vedemo?",
+        "category": "evento_casuale",
+        "post_type": "sondaggio",
+        "participate": False,
+    }
     payload.update(overrides)
     return await client.post("/posts", json=payload)
 

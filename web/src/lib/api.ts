@@ -16,6 +16,8 @@ import type {
   NotificationFilter,
   NotificationPage,
   NotificationSettings,
+  PollMode,
+  PollState,
   PostDetail,
   Profile,
   PostPage,
@@ -105,6 +107,10 @@ export const api = {
     category: PostCategory;
     post_type: PostType;
     max_participants?: number | null;
+    poll_mode?: PollMode;
+    poll_multi?: boolean;
+    options?: string[];
+    participate?: boolean;
   }) => request<PostDetail>("/posts", { method: "POST", body: JSON.stringify(body) }),
   updatePost: (
     id: number,
@@ -119,6 +125,11 @@ export const api = {
   toggleLike: (id: number) => request<LikeState>(`/posts/${id}/like`, { method: "POST" }),
   toggleRsvp: (id: number) => request<RsvpState>(`/posts/${id}/rsvp`, { method: "POST" }),
   listAttendees: (id: number) => request<UserPublic[]>(`/posts/${id}/attendees`),
+  votePoll: (postId: number, optionId: number) =>
+    request<PollState>(`/posts/${postId}/poll/vote`, {
+      method: "POST",
+      body: JSON.stringify({ option_id: optionId }),
+    }),
 
   addComment: (postId: number, content: string, parentId?: number | null) =>
     request<Comment>(`/posts/${postId}/comments`, {
