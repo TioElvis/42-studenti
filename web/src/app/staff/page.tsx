@@ -1,6 +1,6 @@
-import { StaffComingSoon } from "@/components/staff/coming-soon";
+import { StaffContact } from "@/components/staff/staff-contact";
 
-/** Staff — contact the 42 Roma staff (suggestions, issues, questions). Stub for now. */
+/** Staff — write to the 42 Roma staff; opens a pre-filled email in your client. */
 export default function StaffPage() {
-  return <StaffComingSoon />;
+  return <StaffContact />;
 }
