@@ -38,6 +38,16 @@ async def test_category_filter(client):
     assert data[0]["category"] == "evento_casuale"
 
 
+async def test_category_filter_multi(client):
+    await _create_post(client, category="studio")
+    await _create_post(client, category="evento_casuale")
+    await _create_post(client, category="mercatino")
+    resp = await client.get("/posts", params=[("category", "studio"), ("category", "mercatino")])
+    assert resp.status_code == 200
+    cats = {p["category"] for p in resp.json()["items"]}
+    assert cats == {"studio", "mercatino"}
+
+
 async def test_invalid_category_rejected(client):
     resp = await client.post("/posts", json={"content": "x", "category": "not_a_category"})
     assert resp.status_code == 422

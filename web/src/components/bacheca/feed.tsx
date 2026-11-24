@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import { SectionHeading } from "@/components/chrome/section-heading";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CategoryPills, type CategoryFilter } from "./category-pills";
+import { CategoryPills } from "./category-pills";
 import { PostCard } from "./post-card";
 import { PostFormModal, type PostFormValues } from "./post-form-modal";
 import { PostDetailModal, type PostPatch } from "./post-detail-modal";
@@ -14,24 +14,21 @@ import { AttendeesDialog } from "./attendees-dialog";
 import { Sidebar } from "./sidebar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { api, ApiError } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useRealtime } from "@/providers/realtime";
 import { useAuth } from "@/providers/auth-provider";
 import { useI18n } from "@/providers/i18n-provider";
-import type { LikeState, Post, PostType, RsvpState } from "@/lib/types";
+import type { LikeState, Post, PostCategory, RsvpState } from "@/lib/types";
 
 const PAGE_SIZE = 15;
 
-export interface FeedProps {
-  /** When set, the feed shows only this post type (e.g. sondaggi for Comunità). */
-  postType?: PostType;
-}
-
-export function Feed({ postType }: FeedProps = {}) {
+export function Feed() {
   const { user } = useAuth();
   const { t } = useI18n();
-  const isComunita = postType === "sondaggio";
   const [posts, setPosts] = React.useState<Post[]>([]);
-  const [filter, setFilter] = React.useState<CategoryFilter>("all");
+  // Empty set = no category filter ("Tutti"); any selected = show any-of.
+  const [categories, setCategories] = React.useState<Set<PostCategory>>(new Set());
+  const [sondaggiOnly, setSondaggiOnly] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const [cursor, setCursor] = React.useState<number | null>(null);
@@ -50,13 +47,29 @@ export function Feed({ postType }: FeedProps = {}) {
     if (raw && /^\d+$/.test(raw)) setDetailPostId(Number(raw));
   }, []);
 
-  const load = React.useCallback(async (f: CategoryFilter) => {
+  const matchesFilter = React.useCallback(
+    (p: Post) =>
+      (categories.size === 0 || categories.has(p.category)) &&
+      (!sondaggiOnly || p.post_type === "sondaggio"),
+    [categories, sondaggiOnly],
+  );
+
+  const toggleCategory = React.useCallback((c: PostCategory) => {
+    setCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c);
+      else next.add(c);
+      return next;
+    });
+  }, []);
+
+  const load = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const page = await api.listPosts({
-        category: f === "all" ? undefined : f,
-        postType,
+        categories: categories.size ? [...categories] : undefined,
+        postType: sondaggiOnly ? "sondaggio" : undefined,
         limit: PAGE_SIZE,
       });
       setPosts(page.items);
@@ -67,19 +80,19 @@ export function Feed({ postType }: FeedProps = {}) {
     } finally {
       setLoading(false);
     }
-  }, [postType, t]);
+  }, [categories, sondaggiOnly, t]);
 
   React.useEffect(() => {
-    void load(filter);
-  }, [filter, load]);
+    void load();
+  }, [load]);
 
   const loadMore = React.useCallback(async () => {
     if (loading || loadingMore || !hasMore || cursor == null) return;
     setLoadingMore(true);
     try {
       const page = await api.listPosts({
-        category: filter === "all" ? undefined : filter,
-        postType,
+        categories: categories.size ? [...categories] : undefined,
+        postType: sondaggiOnly ? "sondaggio" : undefined,
         cursor,
         limit: PAGE_SIZE,
       });
@@ -94,7 +107,7 @@ export function Feed({ postType }: FeedProps = {}) {
     } finally {
       setLoadingMore(false);
     }
-  }, [loading, loadingMore, hasMore, cursor, filter, postType]);
+  }, [loading, loadingMore, hasMore, cursor, categories, sondaggiOnly]);
 
   // Infinite scroll: a sentinel near the bottom triggers loading older posts.
   const sentinelRef = React.useRef<HTMLDivElement | null>(null);
@@ -123,8 +136,7 @@ export function Feed({ postType }: FeedProps = {}) {
         const incoming = event.data;
         setPosts((prev) => {
           if (prev.some((p) => p.id === incoming.id)) return prev; // de-dupe own echo
-          if (postType && incoming.post_type !== postType) return prev;
-          if (filter !== "all" && incoming.category !== filter) return prev;
+          if (!matchesFilter(incoming)) return prev;
           return [{ ...incoming, is_mine: incoming.author.id === myId }, ...prev];
         });
         break;
@@ -144,7 +156,7 @@ export function Feed({ postType }: FeedProps = {}) {
                   }
                 : p,
             )
-            .filter((p) => (filter === "all" ? true : p.category === filter)),
+            .filter(matchesFilter),
         );
         break;
       }
@@ -209,15 +221,12 @@ export function Feed({ postType }: FeedProps = {}) {
           : {}),
       });
       setPosts((prev) =>
-        prev
-          .map((p) => (p.id === updated.id ? { ...p, ...updated } : p))
-          .filter((p) => (filter === "all" ? true : p.category === filter)),
+        prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p)).filter(matchesFilter),
       );
     } else {
       const created = await api.createPost(body);
       // De-dupe: the WebSocket "post.created" echo may already have added it.
-      const matchesType = !postType || created.post_type === postType;
-      if (matchesType && (filter === "all" || filter === created.category)) {
+      if (matchesFilter(created)) {
         setPosts((prev) => (prev.some((p) => p.id === created.id) ? prev : [created, ...prev]));
       }
     }
@@ -239,24 +248,37 @@ export function Feed({ postType }: FeedProps = {}) {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
       <section className="order-2 lg:order-1">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <SectionHeading
-            label={t(isComunita ? "comunita.label" : "bacheca.label")}
-            desc={t(isComunita ? "comunita.desc" : "bacheca.desc")}
-          />
-          {!postType && (
-            <Button
-              onClick={() => {
-                setEditing(null);
-                setFormOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4" /> {t("bacheca.newMessage")}
-            </Button>
-          )}
+          <SectionHeading label={t("bacheca.label")} desc={t("bacheca.desc")} />
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" /> {t("bacheca.newMessage")}
+          </Button>
         </div>
 
-        <div className="mb-5">
-          <CategoryPills value={filter} onChange={setFilter} />
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            aria-pressed={sondaggiOnly}
+            onClick={() => setSondaggiOnly((v) => !v)}
+            className={cn(
+              "border px-3 py-1.5 font-mono text-xs transition-colors",
+              sondaggiOnly
+                ? "border-[var(--border)] bg-[var(--primary)] text-[var(--primary-fg)] retro-shadow-sm"
+                : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]",
+            )}
+          >
+            {t("cat.sondaggi")}
+          </button>
+          <span aria-hidden className="mx-1 hidden h-5 w-px bg-[var(--border)] sm:block" />
+          <CategoryPills
+            selected={categories}
+            onToggle={toggleCategory}
+            onClear={() => setCategories(new Set())}
+          />
         </div>
 
         {loading ? (
@@ -268,7 +290,7 @@ export function Feed({ postType }: FeedProps = {}) {
         ) : error ? (
           <div className="window retro-shadow p-6 text-center">
             <p className="font-mono text-sm text-[var(--primary)]">{error}</p>
-            <Button variant="outline" size="sm" className="mt-3" onClick={() => void load(filter)}>
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => void load()}>
               {t("common.retry")}
             </Button>
           </div>
@@ -276,7 +298,7 @@ export function Feed({ postType }: FeedProps = {}) {
           <div className="window retro-shadow p-8 text-center">
             <p className="font-display text-lg">{t("bacheca.emptyTitle")}</p>
             <p className="mt-1 font-mono text-sm text-[var(--text-muted)]">
-              {t(isComunita ? "bacheca.emptyHintComunita" : "bacheca.emptyHintPost")}
+              {t("bacheca.emptyHintPost")}
             </p>
           </div>
         ) : (
@@ -317,7 +339,14 @@ export function Feed({ postType }: FeedProps = {}) {
         )}
       </section>
 
-      <Sidebar className="order-1 lg:order-2" onOpenPost={(id) => setDetailPostId(id)} />
+      <Sidebar
+        className="order-1 lg:order-2"
+        onOpenPost={(id) => setDetailPostId(id)}
+        onShowSondaggi={() => {
+          setSondaggiOnly(true);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
 
       <PostFormModal
         open={formOpen}

@@ -96,7 +96,7 @@ async def list_posts(
     session: AsyncSession,
     *,
     viewer_id: int,
-    category: PostCategory | None = None,
+    categories: list[PostCategory] | None = None,
     post_type: PostType | None = None,
     cursor: int | None = None,
     limit: int = 20,
@@ -104,13 +104,14 @@ async def list_posts(
     """Cursor-paginated feed, newest first. ``cursor`` is the last seen post id.
 
     Posts persist indefinitely (no time-based expiry); only the author can
-    delete them. ``post_type`` filters to plain posts or sondaggi (the Comunità
-    tab asks for sondaggi only).
+    delete them. ``categories`` (any-of) and ``post_type`` narrow the feed —
+    the Bacheca filter bar offers a multi-select of categories plus a Sondaggi
+    toggle (``post_type=sondaggio``).
     """
     limit = max(1, min(limit, MAX_PAGE_SIZE))
     stmt = _base_query(viewer_id).order_by(Post.id.desc()).limit(limit + 1)
-    if category is not None:
-        stmt = stmt.where(Post.category == category)
+    if categories:
+        stmt = stmt.where(Post.category.in_(categories))
     if post_type is not None:
         stmt = stmt.where(Post.post_type == post_type)
     if cursor is not None:

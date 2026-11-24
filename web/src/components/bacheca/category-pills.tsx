@@ -5,40 +5,50 @@ import { CATEGORIES } from "@/lib/categories";
 import { useI18n } from "@/providers/i18n-provider";
 import type { PostCategory } from "@/lib/types";
 
-export type CategoryFilter = PostCategory | "all";
-
+/**
+ * Multi-select category filter. An empty `selected` set means "Tutti" (no
+ * category filter); otherwise the feed shows posts in ANY selected category.
+ */
 export function CategoryPills({
-  value,
-  onChange,
+  selected,
+  onToggle,
+  onClear,
 }: {
-  value: CategoryFilter;
-  onChange: (next: CategoryFilter) => void;
+  selected: Set<PostCategory>;
+  onToggle: (category: PostCategory) => void;
+  onClear: () => void;
 }) {
   const { t } = useI18n();
-  const pills: { key: CategoryFilter; label: string }[] = [
-    { key: "all", label: t("cat.all") },
-    ...CATEGORIES.map((c) => ({ key: c.slug as CategoryFilter, label: t(`cat.${c.slug}`) })),
-  ];
+
+  const pillClass = (active: boolean) =>
+    cn(
+      "border px-3 py-1.5 font-mono text-xs transition-colors",
+      active
+        ? "border-[var(--border)] bg-[var(--primary)] text-[var(--primary-fg)] retro-shadow-sm"
+        : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]",
+    );
 
   return (
-    <div className="flex flex-wrap gap-2" role="tablist" aria-label={t("cat.filter")}>
-      {pills.map((pill) => {
-        const active = value === pill.key;
+    <div className="flex flex-wrap gap-2" role="group" aria-label={t("cat.filter")}>
+      <button
+        type="button"
+        aria-pressed={selected.size === 0}
+        onClick={onClear}
+        className={pillClass(selected.size === 0)}
+      >
+        {t("cat.all")}
+      </button>
+      {CATEGORIES.map((c) => {
+        const active = selected.has(c.slug);
         return (
           <button
-            key={pill.key}
+            key={c.slug}
             type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onChange(pill.key)}
-            className={cn(
-              "border px-3 py-1.5 font-mono text-xs transition-colors",
-              active
-                ? "border-[var(--border)] bg-[var(--primary)] text-[var(--primary-fg)] retro-shadow-sm"
-                : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]",
-            )}
+            aria-pressed={active}
+            onClick={() => onToggle(c.slug)}
+            className={pillClass(active)}
           >
-            {pill.label}
+            {t(`cat.${c.slug}`)}
           </button>
         );
       })}
