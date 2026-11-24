@@ -143,6 +143,65 @@ async def test_contribute_auth_required_on_403():
             )
 
 
+async def test_direct_push_commits_to_base():
+    s = _settings()
+    with respx.mock(assert_all_called=False) as m:
+        m.get(
+            url__startswith="https://api.github.com/repos/TioElvis/42-studenti/contents/"
+        ).mock(return_value=R(404, json={}))
+        m.put(
+            url__startswith="https://api.github.com/repos/TioElvis/42-studenti/contents/"
+        ).mock(
+            return_value=R(
+                201,
+                json={
+                    "content": {
+                        "html_url": "https://github.com/TioElvis/42-studenti/blob/main/assets/material/x.md"
+                    }
+                },
+            )
+        )
+        url = await github_user.contribute_direct_push(
+            settings=s,
+            token="ghp_x",
+            section="material",
+            rel_path="x.md",
+            content_b64="aGk=",
+            message="m",
+        )
+    assert "blob/main/assets/material/x.md" in url
+
+
+async def test_direct_push_requires_write_access():
+    s = _settings()
+    with respx.mock(assert_all_called=False) as m:
+        m.get(
+            url__startswith="https://api.github.com/repos/TioElvis/42-studenti/contents/"
+        ).mock(return_value=R(404, json={}))
+        m.put(
+            url__startswith="https://api.github.com/repos/TioElvis/42-studenti/contents/"
+        ).mock(return_value=R(403, json={}))
+        with pytest.raises(GithubAuthRequired):
+            await github_user.contribute_direct_push(
+                settings=s,
+                token="noperm",
+                section="material",
+                rel_path="x.md",
+                content_b64="aGk=",
+                message="m",
+            )
+
+
+def test_archive_allow_list():
+    from app.config import Settings
+
+    s = Settings(GITHUB_ARCHIVE_ALLOW="alice, Bob")
+    assert s.can_contribute_archive("alice") is True
+    assert s.can_contribute_archive("BOB") is True
+    assert s.can_contribute_archive("carol") is False
+    assert Settings(GITHUB_ARCHIVE_ALLOW="").can_contribute_archive("alice") is False
+
+
 async def test_status_and_contribute_unconfigured(client):
     st = (await client.get("/github/status")).json()
     assert st["configured"] is False and st["linked"] is False and st["username"] is None

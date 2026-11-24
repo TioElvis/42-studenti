@@ -24,6 +24,7 @@ export function ContributeModal({
 }) {
   const { t } = useI18n();
   const [mode, setMode] = React.useState<"text" | "file">("text");
+  const [how, setHow] = React.useState<"pr" | "push">("pr");
   const [folder, setFolder] = React.useState("");
   const [filename, setFilename] = React.useState("");
   const [text, setText] = React.useState("");
@@ -36,6 +37,7 @@ export function ContributeModal({
   React.useEffect(() => {
     if (open) {
       setMode("text");
+      setHow("pr");
       setFolder("");
       setFilename("");
       setText("");
@@ -83,6 +85,7 @@ export function ContributeModal({
         path,
         content: mode === "text" ? text : b64,
         encoding: mode === "text" ? "utf-8" : "base64",
+        mode: how,
         message: message.trim() || null,
       });
       setPrUrl(res.pr_url);
@@ -108,11 +111,12 @@ export function ContributeModal({
           <div className="flex flex-col gap-3">
             <p className="font-display text-lg">{t("contribute.successTitle")}</p>
             <p className="font-mono text-sm text-[var(--text-muted)]">
-              {t("contribute.successBody")}
+              {how === "push" ? t("contribute.successBodyPush") : t("contribute.successBody")}
             </p>
             <Button asChild>
               <a href={prUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4" /> {t("contribute.viewPr")}
+                <ExternalLink className="h-4 w-4" />{" "}
+                {how === "push" ? t("contribute.viewFile") : t("contribute.viewPr")}
               </a>
             </Button>
             <Button variant="outline" onClick={() => setPrUrl(null)}>
@@ -121,6 +125,33 @@ export function ContributeModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div>
+              <label className="mb-1 block font-mono text-xs text-[var(--text-muted)]">
+                {t("contribute.howLabel")}
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHow("pr")}
+                  aria-pressed={how === "pr"}
+                  className={chip(how === "pr")}
+                >
+                  {t("contribute.howPr")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHow("push")}
+                  aria-pressed={how === "push"}
+                  className={chip(how === "push")}
+                >
+                  {t("contribute.howPush")}
+                </button>
+              </div>
+              <p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">
+                {how === "push" ? t("contribute.howPushNote") : t("contribute.howPrNote")}
+              </p>
+            </div>
+
             <div className="flex gap-2">
               <button
                 type="button"

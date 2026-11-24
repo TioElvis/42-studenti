@@ -193,6 +193,7 @@ export const api = {
     path: string;
     content: string;
     encoding?: "utf-8" | "base64";
+    mode?: "pr" | "push";
     message?: string | null;
     title?: string | null;
   }) => request<{ pr_url: string }>("/github/contribute", {

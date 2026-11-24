@@ -40,6 +40,7 @@ async def status_(settings: SettingsDep, user: CurrentUser) -> GithubStatus:
         configured=settings.github_contrib_configured,
         linked=bool(user.github_username),
         username=user.github_username,
+        can_archive=settings.can_contribute_archive(user.login),
     )
 
 
@@ -119,6 +120,11 @@ async def contribute(
 
     if not content_service.section_allowed(data.section):
         raise HTTPException(status_code=404, detail="Sezione non valida.")
+    # The archive section is restricted to an allow-list of 42 logins.
+    if data.section == "archive" and not settings.can_contribute_archive(user.login):
+        raise HTTPException(
+            status_code=403, detail="Solo alcuni studenti possono contribuì all'archivio."
+        )
     try:
         rel = content_service.confine_rel(data.path)  # never escapes assets/<section>/
     except NotFoundError as exc:
@@ -141,25 +147,38 @@ async def contribute(
     title = (data.title or "").strip() or message
     body = f"Contributo di @{user.github_username} via 42 Studenti."
     try:
-        pr_url = await github_user.contribute_via_pr(
-            settings=settings,
-            token=token,
-            login=user.github_username,
-            section=data.section,
-            rel_path=rel,
-            content_b64=content_b64,
-            message=message,
-            title=title,
-            body=body,
-        )
+        if data.mode == "push":
+            url = await github_user.contribute_direct_push(
+                settings=settings,
+                token=token,
+                section=data.section,
+                rel_path=rel,
+                content_b64=content_b64,
+                message=message,
+            )
+            # The branch changed → drop the cached listing so it shows at once.
+            content_service.invalidate_github_cache(data.section)
+        else:
+            url = await github_user.contribute_via_pr(
+                settings=settings,
+                token=token,
+                login=user.github_username,
+                section=data.section,
+                rel_path=rel,
+                content_b64=content_b64,
+                message=message,
+                title=title,
+                body=body,
+            )
     except github_user.GithubAuthRequired as exc:
         raise HTTPException(
-            status_code=409, detail="Ricollega GitHub (serve il permesso public_repo)."
+            status_code=409,
+            detail="GitHub ha negato l'operazione (serve accesso in scrittura, o ricollega).",
         ) from exc
     except github_user.GithubApiError as exc:
         raise HTTPException(status_code=502, detail=str(exc) or "GitHub ha rifiutato.") from exc
 
-    return ContributeOut(pr_url=pr_url)
+    return ContributeOut(pr_url=url)
 
 
 def _frontend_redirect(settings, query: str) -> RedirectResponse:

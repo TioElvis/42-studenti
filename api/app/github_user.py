@@ -94,6 +94,48 @@ async def fetch_github_login(token: str) -> str:
     return login
 
 
+async def contribute_direct_push(
+    *,
+    settings: Settings,
+    token: str,
+    section: str,
+    rel_path: str,
+    content_b64: str,
+    message: str,
+) -> str:
+    """Commit a file straight to the base branch of the upstream repo.
+
+    Requires GitHub write access (owner/collaborator); otherwise GitHub rejects
+    it and we raise ``GithubAuthRequired``. Returns the committed file's URL.
+    """
+    upstream = settings.github_repo
+    base = settings.github_branch
+    full_path = f"assets/{section}/{rel_path}"
+    async with httpx.AsyncClient(
+        base_url=_GITHUB_API, timeout=20.0, headers=_headers(token)
+    ) as client:
+        existing = await client.get(
+            f"/repos/{upstream}/contents/{full_path}", params={"ref": base}
+        )
+        if existing.status_code in (401, 403):
+            raise GithubAuthRequired("No write access to the repo")
+        sha = existing.json().get("sha") if existing.status_code == 200 else None
+
+        payload: dict[str, object] = {"message": message, "content": content_b64, "branch": base}
+        if sha:
+            payload["sha"] = sha
+        put = await client.put(f"/repos/{upstream}/contents/{full_path}", json=payload)
+        if put.status_code in (401, 403):
+            raise GithubAuthRequired("Serve accesso in scrittura al repository")
+        if put.status_code not in (200, 201):
+            raise GithubApiError("Couldn't push the file")
+        data = put.json()
+        url = (data.get("content") or {}).get("html_url") or (
+            (data.get("commit") or {}).get("html_url")
+        )
+        return url or f"https://github.com/{upstream}/blob/{base}/{full_path}"
+
+
 # --- contribution flow (fork -> branch -> commit -> PR) ----------------------
 
 

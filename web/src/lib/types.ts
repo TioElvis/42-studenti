@@ -162,6 +162,7 @@ export interface GithubStatus {
   configured: boolean;
   linked: boolean;
   username: string | null;
+  can_archive: boolean;
 }
 
 export interface ActivityStats {

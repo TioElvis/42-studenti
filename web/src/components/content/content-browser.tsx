@@ -132,11 +132,13 @@ export function ContentBrowser({
     <section>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <SectionHeading label={t(labelKey)} desc={t(descKey)} />
-        {gh?.configured && gh.linked && (
-          <Button size="sm" onClick={() => setContributeOpen(true)}>
-            {t("content.contribute")}
-          </Button>
-        )}
+        {gh?.configured &&
+          gh.linked &&
+          (section === "material" || gh.can_archive) && (
+            <Button size="sm" onClick={() => setContributeOpen(true)}>
+              {t("content.contribute")}
+            </Button>
+          )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,320px)_1fr]">
