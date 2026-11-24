@@ -88,8 +88,20 @@ class Settings(BaseSettings):
     # needed); otherwise it falls back to the local assets_dir.
     github_repo: str = Field(default="", alias="GITHUB_REPO")
     github_branch: str = Field(default="main", alias="GITHUB_BRANCH")
-    github_token: str = Field(default="", alias="GITHUB_TOKEN")  # optional
     github_cache_ttl: int = Field(default=300, alias="GITHUB_CACHE_TTL")
+
+    @field_validator("github_repo")
+    @classmethod
+    def _normalize_github_repo(cls, v: str) -> str:
+        """Accept either ``owner/name`` or a full GitHub URL; store ``owner/name``."""
+        v = v.strip()
+        if not v:
+            return v
+        for prefix in ("https://github.com/", "http://github.com/", "github.com/"):
+            if v.startswith(prefix):
+                v = v[len(prefix):]
+                break
+        return v.rstrip("/").removesuffix(".git")
 
     # --- Optional: let students link their own GitHub to contribute to assets/ ---
     # A GitHub OAuth App (the feature is hidden until these are set).

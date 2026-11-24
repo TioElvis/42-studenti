@@ -32,3 +32,13 @@ def test_sqlite_untouched():
     url, args = asyncpg_url_and_connect_args("sqlite+aiosqlite:///./x.db")
     assert url == "sqlite+aiosqlite:///./x.db"
     assert args == {}
+
+
+def test_github_repo_normalized():
+    from app.config import Settings
+
+    assert Settings(GITHUB_REPO="https://github.com/TioElvis/42-studenti").github_repo == (
+        "TioElvis/42-studenti"
+    )
+    assert Settings(GITHUB_REPO="TioElvis/42-studenti.git/").github_repo == "TioElvis/42-studenti"
+    assert Settings(GITHUB_REPO="").github_repo == ""
