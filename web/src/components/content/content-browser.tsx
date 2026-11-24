@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ContributeModal } from "./contribute-modal";
 import { cn } from "@/lib/utils";
-import { api, ApiError, githubLinkUrl } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/providers/i18n-provider";
 import type {
   ContentEntry,
@@ -91,14 +91,6 @@ export function ContentBrowser({
     };
   }, []);
 
-  async function unlinkGithub() {
-    try {
-      await api.unlinkGithub();
-      setGh((g) => (g ? { ...g, linked: false, username: null } : g));
-    } catch {
-      /* ignore — the button simply won't change state */
-    }
-  }
 
   const open = React.useCallback(
     (entry: ContentEntry) => {
@@ -140,25 +132,11 @@ export function ContentBrowser({
     <section>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <SectionHeading label={t(labelKey)} desc={t(descKey)} />
-        {gh?.configured &&
-          (gh.linked ? (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <Button size="sm" onClick={() => setContributeOpen(true)}>
-                {t("content.contribute")}
-              </Button>
-              <button
-                type="button"
-                onClick={unlinkGithub}
-                className="font-mono text-[11px] text-[var(--text-muted)] hover:text-[var(--text)] hover:underline"
-              >
-                @{gh.username} · {t("content.unlink")}
-              </button>
-            </div>
-          ) : (
-            <Button asChild size="sm" variant="outline">
-              <a href={githubLinkUrl()}>{t("content.connectGithub")}</a>
-            </Button>
-          ))}
+        {gh?.configured && gh.linked && (
+          <Button size="sm" onClick={() => setContributeOpen(true)}>
+            {t("content.contribute")}
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,320px)_1fr]">

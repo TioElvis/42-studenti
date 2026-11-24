@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Window, WindowBar } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, githubLinkUrl } from "@/lib/api";
 import { fullDate } from "@/lib/time";
 import { useI18n } from "@/providers/i18n-provider";
-import type { Profile, ProjectInfo } from "@/lib/types";
+import type { GithubStatus, Profile, ProjectInfo } from "@/lib/types";
 
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -50,6 +50,7 @@ export function ProfileView({ login }: { login: string }) {
   const [error, setError] = React.useState<string | null>(null);
   const [following, setFollowing] = React.useState(false);
   const [followers, setFollowers] = React.useState(0);
+  const [gh, setGh] = React.useState<GithubStatus | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -81,6 +82,35 @@ export function ProfileView({ login }: { login: string }) {
       setFollowers(profile.followers);
     }
   }, [profile]);
+
+  // Own-profile only: GitHub link status for the account section.
+  React.useEffect(() => {
+    if (!profile?.is_me) {
+      setGh(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .githubStatus()
+      .then((s) => {
+        if (!cancelled) setGh(s);
+      })
+      .catch(() => {
+        /* optional UI — ignore */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.is_me]);
+
+  async function unlinkGithub() {
+    try {
+      await api.unlinkGithub();
+      setGh((g) => (g ? { ...g, linked: false, username: null } : g));
+    } catch {
+      /* ignore */
+    }
+  }
 
   async function toggleFollow() {
     if (!profile) return;
@@ -229,6 +259,31 @@ export function ProfileView({ login }: { login: string }) {
               <Stat label={t("profile.logins")} value={profile.activity.logins} />
             </div>
           </Window>
+
+          {profile.is_me && gh?.configured && (
+            <Window className="retro-shadow">
+              <WindowBar title="GITHUB.EXE" />
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <div className="font-mono text-sm font-bold">{t("profileGithub.title")}</div>
+                  <div className="font-mono text-[11px] text-[var(--text-muted)]">
+                    {gh.linked
+                      ? t("profileGithub.linkedAs", { name: gh.username ?? "" })
+                      : t("profileGithub.notLinked")}
+                  </div>
+                </div>
+                {gh.linked ? (
+                  <Button variant="outline" size="sm" onClick={unlinkGithub}>
+                    {t("profileGithub.unlink")}
+                  </Button>
+                ) : (
+                  <Button asChild size="sm">
+                    <a href={githubLinkUrl()}>{t("profileGithub.link")}</a>
+                  </Button>
+                )}
+              </div>
+            </Window>
+          )}
         </>
       )}
     </section>

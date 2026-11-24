@@ -285,9 +285,7 @@ const it = {
     noPreview: "Anteprima non disponibile pe' 'sto tipo de file. Scaricalo pe' aprirlo.",
     search: "Cerca cartella o file…",
     noMatch: "Nessun file trovato.",
-    contribute: "Aggiungi file",
-    connectGithub: "Collega GitHub",
-    unlink: "Scollega",
+    contribute: "Aggiungi un file",
   },
   contribute: {
     title: "Contribuisci ai materiali",
@@ -344,6 +342,13 @@ const it = {
     following: "Seguiti",
     follow: "Segui",
     unfollow: "Non seguì più",
+  },
+  profileGithub: {
+    title: "Account GitHub",
+    linkedAs: "Collegato come @{name}",
+    notLinked: "Non collegato — collega pe' contribuì ai materiali.",
+    link: "Collega GitHub",
+    unlink: "Scollega",
   },
   notifications: {
     title: "Notifiche",
@@ -687,8 +692,6 @@ const en: typeof it = {
     search: "Search folder or file…",
     noMatch: "No files found.",
     contribute: "Add file",
-    connectGithub: "Connect GitHub",
-    unlink: "Disconnect",
   },
   contribute: {
     title: "Contribute materials",
@@ -745,6 +748,13 @@ const en: typeof it = {
     following: "Following",
     follow: "Follow",
     unfollow: "Unfollow",
+  },
+  profileGithub: {
+    title: "GitHub account",
+    linkedAs: "Linked as @{name}",
+    notLinked: "Not linked — connect to contribute materials.",
+    link: "Connect GitHub",
+    unlink: "Disconnect",
   },
   notifications: {
     title: "Notifications",
