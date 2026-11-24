@@ -102,6 +102,7 @@ export interface EventItem {
   end_at: string | null;
   max_people: number | null;
   nbr_subscribers: number | null;
+  internal: boolean;
   interested: boolean;
   interest_count: number;
 }

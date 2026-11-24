@@ -178,6 +178,8 @@ const it = {
     details: "Dettagli",
     openEvent: "Apri i dettagli di {name}",
     nameFallback: "evento",
+    internal: "Interno 42",
+    external: "Esterno",
   },
   eventDetail: {
     titleFallback: "Evento",
@@ -524,6 +526,8 @@ const en: typeof it = {
     details: "Details",
     openEvent: "Open details for {name}",
     nameFallback: "event",
+    internal: "Internal 42",
+    external: "External",
   },
   eventDetail: {
     titleFallback: "Event",

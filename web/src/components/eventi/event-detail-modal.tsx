@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Calendar, Clock, MapPin, Users, Tag, Star } from "lucide-react";
 
 import { DialogContent } from "@/components/ui/dialog";
+import { EventScopeBadge } from "./event-scope-badge";
 import { Button } from "@/components/ui/button";
 import { Linkify } from "@/components/ui/linkify";
 import { cn } from "@/lib/utils";
@@ -80,6 +81,9 @@ export function EventDetailModal({
       <DialogContent title={event?.name ?? t("eventDetail.titleFallback")} barTitle="EVENTO.ICS">
         {event && (
           <div className="flex flex-col gap-4">
+            <div>
+              <EventScopeBadge internal={event.internal} />
+            </div>
             <div className="flex flex-col gap-2.5">
               <InfoRow icon={Calendar}>
                 <span className="capitalize">
