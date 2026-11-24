@@ -25,6 +25,17 @@ class PostType(str, enum.Enum):
     SONDAGGIO = "sondaggio"
 
 
+class PollMode(str, enum.Enum):
+    """How a sondaggio collects responses.
+
+    ATTENDANCE: the classic single-button "Ci sto!" RSVP.
+    OPTIONS: a WhatsApp-style poll with custom options (single/multiple choice).
+    """
+
+    ATTENDANCE = "attendance"
+    OPTIONS = "options"
+
+
 class NotificationType(str, enum.Enum):
     POST = "post"  # a new post (from someone you follow, or anyone)
     COMMENT = "comment"  # someone commented on your post

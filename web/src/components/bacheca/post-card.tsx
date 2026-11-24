@@ -11,7 +11,7 @@ import { SondaggioBox } from "./sondaggio-box";
 import { relativeTime } from "@/lib/time";
 import { useTheme } from "@/providers/theme-provider";
 import { useI18n } from "@/providers/i18n-provider";
-import type { LikeState, Post, RsvpState } from "@/lib/types";
+import type { LikeState, PollOption, Post, RsvpState } from "@/lib/types";
 
 export function PostCard({
   post,
@@ -21,6 +21,7 @@ export function PostCard({
   onEdit,
   onDelete,
   onRsvp,
+  onPoll,
   onOpenAttendees,
 }: {
   post: Post;
@@ -30,6 +31,7 @@ export function PostCard({
   onEdit: (post: Post) => void;
   onDelete: (post: Post) => void;
   onRsvp: (post: Post, state: RsvpState) => void;
+  onPoll: (post: Post, options: PollOption[]) => void;
   onOpenAttendees: (post: Post) => void;
 }) {
   const { theme } = useTheme();
@@ -128,6 +130,7 @@ export function PostCard({
           <SondaggioBox
             post={post}
             onRsvpChange={(_id, state) => onRsvp(post, state)}
+            onPollChange={(_id, options) => onPoll(post, options)}
             onOpenAttendees={() => onOpenAttendees(post)}
           />
         )}

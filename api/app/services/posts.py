@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..models.comment import Comment
-from ..models.enums import PostCategory, PostType
+from ..models.enums import PollMode, PostCategory, PostType
 from ..models.like import PostLike
+from ..models.poll import PollOption, PollVote
 from ..models.post import Post
 from ..models.rsvp import PostRSVP
 from ..models.user import User
@@ -18,6 +19,8 @@ from ..schemas.post import (
     CERCO_TEAM_MAX,
     PARTICIPANTS_MAX,
     LikeState,
+    PollOptionOut,
+    PollState,
     PostCreate,
     PostDetail,
     PostOut,
@@ -74,7 +77,7 @@ def _base_query(viewer_id: int) -> Select:
         liked_by_me.label("liked_by_me"),
         rsvp_count.label("rsvp_count"),
         joined_by_me.label("joined_by_me"),
-    ).options(selectinload(Post.author))
+    ).options(selectinload(Post.author), selectinload(Post.poll_options))
 
 
 def _to_out(row, viewer_id: int) -> PostOut:
@@ -90,6 +93,43 @@ def _to_out(row, viewer_id: int) -> PostOut:
         post.max_participants is not None and out.rsvp_count >= post.max_participants
     )
     return out
+
+
+async def _attach_polls(session: AsyncSession, outs: list[PostOut], viewer_id: int) -> None:
+    """Fill vote_count / voted_by_me on the options of any options-mode poll.
+
+    One aggregate query for counts and one for the viewer's votes (no N+1); the
+    option rows themselves came eager-loaded with the posts.
+    """
+    option_ids = [
+        o.id for p in outs if p.poll_mode == PollMode.OPTIONS for o in p.poll_options
+    ]
+    if not option_ids:
+        return
+    counts = dict(
+        (
+            await session.execute(
+                select(PollVote.option_id, func.count(PollVote.id))
+                .where(PollVote.option_id.in_(option_ids))
+                .group_by(PollVote.option_id)
+            )
+        ).all()
+    )
+    mine = set(
+        (
+            await session.execute(
+                select(PollVote.option_id).where(
+                    PollVote.option_id.in_(option_ids), PollVote.user_id == viewer_id
+                )
+            )
+        ).scalars().all()
+    )
+    for p in outs:
+        if p.poll_mode != PollMode.OPTIONS:
+            continue
+        for o in p.poll_options:
+            o.vote_count = int(counts.get(o.id, 0))
+            o.voted_by_me = o.id in mine
 
 
 async def list_posts(
@@ -121,6 +161,7 @@ async def list_posts(
     has_more = len(rows) > limit
     rows = rows[:limit]
     items = [_to_out(row, viewer_id) for row in rows]
+    await _attach_polls(session, items, viewer_id)
     next_cursor = items[-1].id if (has_more and items) else None
     return PostPage(items=items, next_cursor=next_cursor)
 
@@ -140,6 +181,7 @@ async def get_detail(session: AsyncSession, *, post_id: int, viewer_id: int) -> 
         _comment_out(c, viewer_id, reply_to=login_by_id.get(c.parent_id) if c.parent_id else None)
         for c in sorted(post.comments, key=lambda c: c.created_at)
     ]
+    await _attach_polls(session, [detail], viewer_id)
     return detail
 
 
@@ -151,8 +193,20 @@ async def create_post(session: AsyncSession, *, author: User, data: PostCreate) 
         category=data.category,
         post_type=data.post_type,
         max_participants=data.max_participants,
+        poll_mode=data.poll_mode,
+        poll_multi=data.poll_multi,
     )
     session.add(post)
+    await session.flush()  # assign post.id for options / RSVP below
+
+    if data.post_type is PostType.SONDAGGIO:
+        if data.poll_mode is PollMode.OPTIONS:
+            for i, text in enumerate(data.options):
+                session.add(PollOption(post_id=post.id, text=text, position=i))
+        elif data.participate:
+            # "Partecipo anch'io": auto-RSVP the author to an attendance poll.
+            session.add(PostRSVP(post_id=post.id, user_id=author.id))
+
     await session.commit()
     return await get_detail(session, post_id=post.id, viewer_id=author.id)
 
@@ -305,6 +359,96 @@ async def list_attendees(session: AsyncSession, *, post_id: int) -> list[UserPub
         .order_by(PostRSVP.created_at)
     )
     return [UserPublic.model_validate(u) for u in rows.scalars().all()]
+
+
+async def _poll_state(session: AsyncSession, *, post_id: int, viewer_id: int) -> PollState:
+    options = (
+        await session.execute(
+            select(PollOption)
+            .where(PollOption.post_id == post_id)
+            .order_by(PollOption.position, PollOption.id)
+        )
+    ).scalars().all()
+    opt_ids = [o.id for o in options]
+    counts: dict[int, int] = {}
+    mine: set[int] = set()
+    if opt_ids:
+        counts = dict(
+            (
+                await session.execute(
+                    select(PollVote.option_id, func.count(PollVote.id))
+                    .where(PollVote.option_id.in_(opt_ids))
+                    .group_by(PollVote.option_id)
+                )
+            ).all()
+        )
+        mine = set(
+            (
+                await session.execute(
+                    select(PollVote.option_id).where(
+                        PollVote.option_id.in_(opt_ids), PollVote.user_id == viewer_id
+                    )
+                )
+            ).scalars().all()
+        )
+    return PollState(
+        post_id=post_id,
+        options=[
+            PollOptionOut(
+                id=o.id,
+                text=o.text,
+                vote_count=int(counts.get(o.id, 0)),
+                voted_by_me=o.id in mine,
+            )
+            for o in options
+        ],
+    )
+
+
+async def vote_poll(
+    session: AsyncSession, *, post_id: int, user_id: int, option_id: int
+) -> PollState:
+    """Toggle a vote on a poll option (single- or multiple-choice)."""
+    post = await session.get(Post, post_id)
+    if post is None:
+        raise NotFoundError("Post not found")
+    if post.post_type is not PostType.SONDAGGIO or post.poll_mode is not PollMode.OPTIONS:
+        raise ConflictError("Questo post non è un sondaggio a opzioni")
+
+    option = await session.get(PollOption, option_id)
+    if option is None or option.post_id != post_id:
+        raise NotFoundError("Opzione non trovata")
+
+    existing = (
+        await session.execute(
+            select(PollVote).where(
+                PollVote.option_id == option_id, PollVote.user_id == user_id
+            )
+        )
+    ).scalar_one_or_none()
+
+    if existing is not None:
+        await session.delete(existing)  # toggle off
+    else:
+        if not post.poll_multi:
+            # Single-choice: drop the user's other votes on this post first.
+            sibling_ids = (
+                await session.execute(
+                    select(PollOption.id).where(PollOption.post_id == post_id)
+                )
+            ).scalars().all()
+            await session.execute(
+                delete(PollVote).where(
+                    PollVote.user_id == user_id, PollVote.option_id.in_(sibling_ids)
+                )
+            )
+        session.add(PollVote(option_id=option_id, user_id=user_id))
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()  # raced with a concurrent identical vote
+
+    return await _poll_state(session, post_id=post_id, viewer_id=user_id)
 
 
 async def add_comment(

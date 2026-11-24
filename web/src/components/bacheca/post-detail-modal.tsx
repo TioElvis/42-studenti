@@ -18,7 +18,7 @@ import { useTheme } from "@/providers/theme-provider";
 import { useRealtime } from "@/providers/realtime";
 import { useAuth } from "@/providers/auth-provider";
 import { useI18n } from "@/providers/i18n-provider";
-import type { Comment, LikeState, PostDetail, RsvpState } from "@/lib/types";
+import type { Comment, LikeState, PollOption, PostDetail, RsvpState } from "@/lib/types";
 
 export interface PostPatch {
   like_count?: number;
@@ -27,6 +27,7 @@ export interface PostPatch {
   rsvp_count?: number;
   rsvp_full?: boolean;
   joined_by_me?: boolean;
+  poll_options?: PollOption[];
 }
 
 export function PostDetailModal({
@@ -101,6 +102,22 @@ export function PostDetailModal({
       case "post.deleted":
         if (event.data.id === postId) onOpenChange(false);
         break;
+      case "post.poll_vote":
+        if (event.data.post_id === postId) {
+          const counts = new Map(event.data.options.map((o) => [o.id, o.vote_count]));
+          setDetail((d) =>
+            d
+              ? {
+                  ...d,
+                  poll_options: d.poll_options.map((o) => ({
+                    ...o,
+                    vote_count: counts.get(o.id) ?? o.vote_count,
+                  })),
+                }
+              : d,
+          );
+        }
+        break;
       case "post.rsvp":
         if (event.data.post_id === postId) {
           setDetail((d) =>
@@ -156,6 +173,12 @@ export function PostDetailModal({
     };
     setDetail({ ...detail, ...patch });
     onPatch(detail.id, patch);
+  }
+
+  function handlePoll(options: PollOption[]) {
+    if (!detail) return;
+    setDetail({ ...detail, poll_options: options });
+    onPatch(detail.id, { poll_options: options });
   }
 
   function handleAddComment(comment: Comment) {
@@ -229,6 +252,7 @@ export function PostDetailModal({
               <SondaggioBox
                 post={detail}
                 onRsvpChange={(_id, state) => handleRsvp(state)}
+                onPollChange={(_id, options) => handlePoll(options)}
                 onOpenAttendees={(id) => onOpenAttendees(id)}
               />
             )}

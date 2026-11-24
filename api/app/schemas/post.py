@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from ..models.enums import PostCategory, PostType
+from ..models.enums import PollMode, PostCategory, PostType
 from .comment import CommentOut
 from .user import UserPublic
 
@@ -14,6 +14,9 @@ TITLE_MAX = 140
 CONTENT_MAX = 4000
 CERCO_TEAM_MAX = 3
 PARTICIPANTS_MAX = 500
+POLL_OPTIONS_MIN = 2
+POLL_OPTIONS_MAX = 10
+POLL_OPTION_MAX_LEN = 120
 
 
 def _strip_optional(v: str | None) -> str | None:
@@ -40,6 +43,12 @@ class PostCreate(BaseModel):
     post_type: PostType = PostType.POST
     # Only used for a sondaggio. None = unlimited (where allowed).
     max_participants: int | None = Field(default=None, ge=1, le=PARTICIPANTS_MAX)
+    # Sondaggio poll settings.
+    poll_mode: PollMode = PollMode.ATTENDANCE
+    poll_multi: bool = False  # single- vs multiple-choice (options mode only)
+    options: list[str] = Field(default_factory=list)  # options mode only
+    # Auto-register the author on an attendance sondaggio ("Partecipo anch'io").
+    participate: bool = True
 
     @field_validator("title")
     @classmethod
@@ -52,18 +61,41 @@ class PostCreate(BaseModel):
         return _strip_required(v)
 
     @model_validator(mode="after")
-    def _v_participants(self) -> "PostCreate":
+    def _v_sondaggio(self) -> "PostCreate":
         if self.post_type is PostType.POST:
-            # Capacity is meaningless on a plain post.
+            # Poll/capacity are meaningless on a plain post.
             object.__setattr__(self, "max_participants", None)
+            object.__setattr__(self, "poll_mode", PollMode.ATTENDANCE)
+            object.__setattr__(self, "poll_multi", False)
+            object.__setattr__(self, "options", [])
             return self
-        # Sondaggio rules.
+
+        if self.poll_mode is PollMode.OPTIONS:
+            # An options poll has no attendance capacity.
+            object.__setattr__(self, "max_participants", None)
+            cleaned: list[str] = []
+            seen: set[str] = set()
+            for raw in self.options:
+                s = raw.strip()[:POLL_OPTION_MAX_LEN].strip()
+                if not s or s.casefold() in seen:
+                    continue
+                seen.add(s.casefold())
+                cleaned.append(s)
+            if len(cleaned) < POLL_OPTIONS_MIN:
+                raise ValueError(
+                    f"Un sondaggio a opzioni vuole almeno {POLL_OPTIONS_MIN} opzioni distinte."
+                )
+            object.__setattr__(self, "options", cleaned[:POLL_OPTIONS_MAX])
+            return self
+
+        # Attendance mode: no options; capacity rules as before.
+        object.__setattr__(self, "options", [])
+        object.__setattr__(self, "poll_multi", False)
         if self.category is PostCategory.CERCO_TEAM:
             if self.max_participants is None or not (1 <= self.max_participants <= CERCO_TEAM_MAX):
                 raise ValueError(
                     f"Un sondaggio 'Cerco team' vuole da 1 a {CERCO_TEAM_MAX} partecipanti."
                 )
-        # Other categories: None (unlimited) or a custom value within bounds — both ok.
         return self
 
 
@@ -95,6 +127,26 @@ class PostAuthor(UserPublic):
     pass
 
 
+class PollOptionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    text: str
+    vote_count: int = 0
+    voted_by_me: bool = False
+
+
+class PollState(BaseModel):
+    """Response of a vote toggle: the post's options with fresh counts."""
+
+    post_id: int
+    options: list[PollOptionOut]
+
+
+class PollVoteIn(BaseModel):
+    option_id: int = Field(ge=1)
+
+
 class PostOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -104,6 +156,9 @@ class PostOut(BaseModel):
     category: PostCategory
     post_type: PostType
     max_participants: int | None = None
+    poll_mode: PollMode = PollMode.ATTENDANCE
+    poll_multi: bool = False
+    poll_options: list[PollOptionOut] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
     author: PostAuthor

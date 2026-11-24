@@ -4,16 +4,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum as SAEnum
+from sqlalchemy import Boolean, Enum as SAEnum
 from sqlalchemy import ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
-from .enums import PostCategory, PostType
+from .enums import PollMode, PostCategory, PostType
 
 if TYPE_CHECKING:
     from .comment import Comment
     from .like import PostLike
+    from .poll import PollOption
     from .rsvp import PostRSVP
     from .user import User
 
@@ -43,6 +44,17 @@ class Post(Base, TimestampMixin):
     # post_type == SONDAGGIO.
     max_participants: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # Sondaggio poll settings (meaningful only when post_type == SONDAGGIO).
+    poll_mode: Mapped[PollMode] = mapped_column(
+        SAEnum(PollMode, name="poll_mode", native_enum=False, length=16),
+        nullable=False,
+        default=PollMode.ATTENDANCE,
+        server_default=PollMode.ATTENDANCE.value,
+    )
+    poll_multi: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+
     author: Mapped["User"] = relationship(back_populates="posts")
     comments: Mapped[list["Comment"]] = relationship(
         back_populates="post",
@@ -54,4 +66,7 @@ class Post(Base, TimestampMixin):
     )
     rsvps: Mapped[list["PostRSVP"]] = relationship(
         back_populates="post", cascade="all, delete-orphan"
+    )
+    poll_options: Mapped[list["PollOption"]] = relationship(
+        back_populates="post", cascade="all, delete-orphan", order_by="PollOption.position"
     )

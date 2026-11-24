@@ -9,6 +9,8 @@ from ..models.enums import PostCategory, PostType
 from ..realtime import manager
 from ..schemas.post import (
     LikeState,
+    PollState,
+    PollVoteIn,
     PostCreate,
     PostDetail,
     PostPage,
@@ -94,3 +96,21 @@ async def list_attendees(
     session: SessionDep, user: CurrentUser, post_id: int
 ) -> list[UserPublic]:
     return await posts_service.list_attendees(session, post_id=post_id)
+
+
+@router.post("/{post_id}/poll/vote", response_model=PollState)
+async def vote_poll(
+    session: SessionDep, user: CurrentUser, post_id: int, data: PollVoteIn
+) -> PollState:
+    state = await posts_service.vote_poll(
+        session, post_id=post_id, user_id=user.id, option_id=data.option_id
+    )
+    # Broadcast counts only (never per-viewer voted flags).
+    await manager.broadcast(
+        "post.poll_vote",
+        {
+            "post_id": post_id,
+            "options": [{"id": o.id, "vote_count": o.vote_count} for o in state.options],
+        },
+    )
+    return state

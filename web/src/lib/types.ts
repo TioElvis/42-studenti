@@ -9,6 +9,20 @@ export type PostCategory =
 
 export type PostType = "post" | "sondaggio";
 
+export type PollMode = "attendance" | "options";
+
+export interface PollOption {
+  id: number;
+  text: string;
+  vote_count: number;
+  voted_by_me: boolean;
+}
+
+export interface PollState {
+  post_id: number;
+  options: PollOption[];
+}
+
 export interface UserPublic {
   id: number;
   login: string;
@@ -40,6 +54,9 @@ export interface Post {
   category: PostCategory;
   post_type: PostType;
   max_participants: number | null;
+  poll_mode: PollMode;
+  poll_multi: boolean;
+  poll_options: PollOption[];
   created_at: string;
   updated_at: string;
   author: UserPublic;
@@ -90,6 +107,10 @@ export type RealtimeEvent =
   | {
       type: "post.rsvp";
       data: { post_id: number; rsvp_count: number; rsvp_full: boolean };
+    }
+  | {
+      type: "post.poll_vote";
+      data: { post_id: number; options: { id: number; vote_count: number }[] };
     };
 
 export interface EventItem {
