@@ -27,17 +27,21 @@ export function LoginGate() {
   const errMsg = errKey ? t(AUTH_ERROR_KEYS[errKey] ?? "login.errOauth") : null;
 
   return (
-    <div className="min-h-screen">
+    <div className="flex h-[100dvh] flex-col overflow-hidden">
       <TopRibbon />
-      <div className="mx-auto flex max-w-md flex-col items-stretch gap-4 px-4 py-10 sm:py-16">
-        <div className="flex items-center justify-between">
-          <StatusPill />
-          <SettingsModal compact />
-        </div>
+      {/* flex-1 + min-h-0 so this region fills (but never exceeds) the viewport;
+          overflow-y-auto is a safety valve for very short screens so the login
+          button is never clipped. The page itself never scrolls. */}
+      <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 py-4">
+        <div className="flex w-full max-w-md flex-col items-stretch gap-4">
+          <div className="flex items-center justify-between">
+            <StatusPill />
+            <SettingsModal compact />
+          </div>
 
-        <Window className="retro-shadow-lg overflow-hidden fade-up">
-          <WindowBar title="ACCEDI_AL_CAMPUS.EXE" />
-          <div className="relative h-36 overflow-hidden border-b border-[var(--border)]">
+          <Window className="retro-shadow-lg overflow-hidden fade-up">
+            <WindowBar title="ACCEDI_AL_CAMPUS.EXE" />
+            <div className="relative h-28 overflow-hidden border-b border-[var(--border)] sm:h-36">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/rome-pixel.png"
@@ -94,7 +98,8 @@ export function LoginGate() {
 
             <p className="font-mono text-[11px] text-[var(--text-muted)]">{t("login.footer")}</p>
           </div>
-        </Window>
+          </Window>
+        </div>
       </div>
     </div>
   );
