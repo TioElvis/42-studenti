@@ -1,3 +1,11 @@
 {
-  "cSpell.words": ["pgbouncer"]
+  "cSpell.words": [
+    "asyncpg",
+    "GOUW",
+    "pgbouncer",
+    "pooler",
+    "sslmode",
+    "Tbsx",
+    "urlsafe"
+  ]
 }

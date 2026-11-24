@@ -201,13 +201,11 @@ def section_allowed(section: str) -> bool:
 
 
 def _gh_headers(settings: Settings, *, api: bool) -> dict[str, str]:
+    # Public repo → unauthenticated reads (no token needed).
     headers = {"User-Agent": _GH_UA}
     if api:
         headers["Accept"] = "application/vnd.github+json"
         headers["X-GitHub-Api-Version"] = "2022-11-28"
-    token = getattr(settings, "github_token", "")
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
     return headers
 
 

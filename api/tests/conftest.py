@@ -16,6 +16,11 @@ os.environ.setdefault("FORTY_TWO_UID", "test-uid")
 os.environ.setdefault("FORTY_TWO_SECRET", "test-secret")
 # Force a known campus id so tests don't pick up a developer's local .env.
 os.environ["FORTY_TWO_CAMPUS_ID"] = "61"
+# Keep GitHub integration off in tests regardless of the maintainer's .env
+# (tests that exercise it pass their own settings object).
+os.environ["GITHUB_REPO"] = ""
+os.environ["GITHUB_OAUTH_CLIENT_ID"] = ""
+os.environ["GITHUB_OAUTH_SECRET"] = ""
 
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 from sqlalchemy.ext.asyncio import create_async_engine  # noqa: E402
