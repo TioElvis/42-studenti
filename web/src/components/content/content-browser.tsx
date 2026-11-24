@@ -91,6 +91,15 @@ export function ContentBrowser({
     };
   }, []);
 
+  async function unlinkGithub() {
+    try {
+      await api.unlinkGithub();
+      setGh((g) => (g ? { ...g, linked: false, username: null } : g));
+    } catch {
+      /* ignore — the button simply won't change state */
+    }
+  }
+
   const open = React.useCallback(
     (entry: ContentEntry) => {
       setSelected(entry);
@@ -133,9 +142,18 @@ export function ContentBrowser({
         <SectionHeading label={t(labelKey)} desc={t(descKey)} />
         {gh?.configured &&
           (gh.linked ? (
-            <Button size="sm" onClick={() => setContributeOpen(true)}>
-              {t("content.contribute")}
-            </Button>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <Button size="sm" onClick={() => setContributeOpen(true)}>
+                {t("content.contribute")}
+              </Button>
+              <button
+                type="button"
+                onClick={unlinkGithub}
+                className="font-mono text-[11px] text-[var(--text-muted)] hover:text-[var(--text)] hover:underline"
+              >
+                @{gh.username} · {t("content.unlink")}
+              </button>
+            </div>
           ) : (
             <Button asChild size="sm" variant="outline">
               <a href={githubLinkUrl()}>{t("content.connectGithub")}</a>

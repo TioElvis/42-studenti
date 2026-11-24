@@ -287,6 +287,7 @@ const it = {
     noMatch: "Nessun file trovato.",
     contribute: "Aggiungi file",
     connectGithub: "Collega GitHub",
+    unlink: "Scollega",
   },
   contribute: {
     title: "Contribuisci ai materiali",
@@ -687,6 +688,7 @@ const en: typeof it = {
     noMatch: "No files found.",
     contribute: "Add file",
     connectGithub: "Connect GitHub",
+    unlink: "Disconnect",
   },
   contribute: {
     title: "Contribute materials",
