@@ -2,13 +2,17 @@
 
 import * as React from "react";
 import {
+  ChevronDown,
+  ChevronRight,
   Download,
   ExternalLink,
   File,
   FileText,
   Folder,
+  FolderPlus,
   Image as ImageIcon,
   Search,
+  Upload,
 } from "lucide-react";
 
 import { SectionHeading } from "@/components/chrome/section-heading";
@@ -35,9 +39,47 @@ const ICON: Record<ContentKind, typeof File> = {
   other: File,
 };
 
-/** Read-only file browser for Materiale / Archivio (served from assets/).
+interface TreeNode {
+  name: string;
+  path: string;
+  folders: TreeNode[];
+  files: ContentEntry[];
+}
+
+/** Build a nested folder tree from the flat listing. `.gitkeep`-only folders
+ * come from `folders` and have no files, so they never inflate file counts. */
+function buildTree(folders: string[], entries: ContentEntry[]): TreeNode {
+  const root: TreeNode = { name: "", path: "", folders: [], files: [] };
+  const index = new Map<string, TreeNode>([["", root]]);
+  const ensure = (path: string): TreeNode => {
+    const hit = index.get(path);
+    if (hit) return hit;
+    const cut = path.lastIndexOf("/");
+    const parent = ensure(cut === -1 ? "" : path.slice(0, cut));
+    const node: TreeNode = { name: path.slice(cut + 1), path, folders: [], files: [] };
+    parent.folders.push(node);
+    index.set(path, node);
+    return node;
+  };
+  for (const f of folders) if (f) ensure(f);
+  for (const e of entries) ensure(e.folder).files.push(e);
+  const sort = (n: TreeNode) => {
+    n.folders.sort((a, b) => a.name.localeCompare(b.name));
+    n.files.sort((a, b) => a.name.localeCompare(b.name));
+    n.folders.forEach(sort);
+  };
+  sort(root);
+  return root;
+}
+
+function countFiles(n: TreeNode): number {
+  return n.files.length + n.folders.reduce((acc, f) => acc + countFiles(f), 0);
+}
+
+/** File browser for Materiale / Archivio (listed from GitHub's assets/).
  * Text renders as plain text (XSS-safe), images and PDFs render inline, and
- * every file can be downloaded or opened in a new tab. */
+ * every file can be downloaded or opened in a new tab. Folders (any depth) get
+ * contextual "upload here" / "new subfolder" actions when contributing is on. */
 export function ContentBrowser({
   section,
   labelKey,
@@ -51,6 +93,8 @@ export function ContentBrowser({
 }) {
   const { t } = useI18n();
   const [entries, setEntries] = React.useState<ContentEntry[] | null>(null);
+  const [folders, setFolders] = React.useState<string[]>([]);
+  const [collapsed, setCollapsed] = React.useState<ReadonlySet<string>>(new Set());
   const [listError, setListError] = React.useState<string | null>(null);
   const [selected, setSelected] = React.useState<ContentEntry | null>(null);
   const [file, setFile] = React.useState<ContentFile | null>(null);
@@ -58,22 +102,28 @@ export function ContentBrowser({
   const [loadingFile, setLoadingFile] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [gh, setGh] = React.useState<GithubStatus | null>(null);
-  const [contributeOpen, setContributeOpen] = React.useState(false);
+  const [contribute, setContribute] = React.useState<{
+    open: boolean;
+    intent: "upload" | "folder";
+    folder: string;
+  }>({ open: false, intent: "upload", folder: "" });
 
-  React.useEffect(() => {
-    let cancelled = false;
-    api
+  const load = React.useCallback(() => {
+    return api
       .listContent(section)
       .then((r) => {
-        if (!cancelled) setEntries(r.entries);
+        setEntries(r.entries);
+        setFolders(r.folders ?? []);
+        setListError(null);
       })
       .catch((e) => {
-        if (!cancelled) setListError(e instanceof ApiError ? e.message : t("content.listError"));
+        setListError(e instanceof ApiError ? e.message : t("content.listError"));
       });
-    return () => {
-      cancelled = true;
-    };
   }, [section, t]);
+
+  React.useEffect(() => {
+    void load();
+  }, [load]);
 
   // GitHub contribution availability (feature hidden unless configured).
   React.useEffect(() => {
@@ -108,37 +158,131 @@ export function ContentBrowser({
     [section, t],
   );
 
-  const groups = React.useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const m = new Map<string, ContentEntry[]>();
-    for (const e of entries ?? []) {
-      if (
-        q &&
-        !e.name.toLowerCase().includes(q) &&
-        !e.folder.toLowerCase().includes(q) &&
-        !e.path.toLowerCase().includes(q)
-      ) {
-        continue;
-      }
-      const k = e.folder || "";
-      const arr = m.get(k);
-      if (arr) arr.push(e);
-      else m.set(k, [e]);
-    }
-    return [...m.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [entries, query]);
+  const query_ = query.trim().toLowerCase();
+  const tree = React.useMemo(() => {
+    const q = query_;
+    const list = (entries ?? []).filter(
+      (e) =>
+        !q ||
+        e.name.toLowerCase().includes(q) ||
+        e.folder.toLowerCase().includes(q) ||
+        e.path.toLowerCase().includes(q),
+    );
+    // While searching, show only folders that lead to a match (no empty ones).
+    return buildTree(q ? [] : folders, list);
+  }, [entries, folders, query_]);
+  const existingPaths = React.useMemo(
+    () => new Set((entries ?? []).map((e) => e.path)),
+    [entries],
+  );
+  const canContribute =
+    !!gh?.configured &&
+    (gh.server_mode || gh.linked) &&
+    (section === "material" || !!gh.can_archive);
+  const hasAny = tree.files.length > 0 || tree.folders.length > 0;
+
+  const toggle = (path: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+
+  const iconBtn =
+    "inline-flex h-5 w-5 shrink-0 items-center justify-center text-[var(--text-muted)] transition-colors hover:text-[var(--text)] rounded-[var(--radius-inner)]";
+
+  const renderFolderActions = (path: string, label: string) =>
+    canContribute && (
+      <span className="ml-auto flex shrink-0 items-center gap-0.5">
+        <button
+          type="button"
+          className={iconBtn}
+          title={t("content.uploadIn", { name: label })}
+          aria-label={t("content.uploadIn", { name: label })}
+          onClick={() => setContribute({ open: true, intent: "upload", folder: path })}
+        >
+          <Upload className="h-3 w-3" aria-hidden />
+        </button>
+        <button
+          type="button"
+          className={iconBtn}
+          title={t("content.newFolderIn", { name: label })}
+          aria-label={t("content.newFolderIn", { name: label })}
+          onClick={() => setContribute({ open: true, intent: "folder", folder: path })}
+        >
+          <FolderPlus className="h-3 w-3" aria-hidden />
+        </button>
+      </span>
+    );
+
+  const renderFile = (e: ContentEntry) => {
+    const Icon = ICON[e.kind];
+    return (
+      <li key={e.path}>
+        <button
+          type="button"
+          onClick={() => open(e)}
+          aria-current={selected?.path === e.path ? "true" : undefined}
+          className={cn(
+            "flex w-full items-center gap-2 border-l-2 px-2 py-1.5 text-left transition-colors rounded-[var(--radius-inner)]",
+            selected?.path === e.path
+              ? "border-[var(--primary)] bg-[var(--surface-2)]"
+              : "border-transparent hover:bg-[var(--surface-2)]",
+          )}
+        >
+          <Icon className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" aria-hidden />
+          <span className="truncate">{e.name}</span>
+        </button>
+      </li>
+    );
+  };
+
+  const renderNode = (node: TreeNode): React.ReactNode => {
+    // Searching expands everything so matches are never hidden.
+    const isCollapsed = !query_ && collapsed.has(node.path);
+    return (
+      <li key={node.path}>
+        <div className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
+          <button
+            type="button"
+            onClick={() => toggle(node.path)}
+            aria-expanded={!isCollapsed}
+            className="flex min-w-0 items-center gap-1.5 py-1 hover:text-[var(--text)]"
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-3 w-3 shrink-0" aria-hidden />
+            ) : (
+              <ChevronDown className="h-3 w-3 shrink-0" aria-hidden />
+            )}
+            <Folder className="h-3 w-3 shrink-0" aria-hidden />
+            <span className="truncate">{node.name}</span>
+            <span className="shrink-0 opacity-70">({countFiles(node)})</span>
+          </button>
+          {renderFolderActions(node.path, node.path)}
+        </div>
+        {!isCollapsed && (
+          <ul className="ml-2 flex flex-col border-l border-[var(--border-subtle)] pl-2">
+            {node.folders.map(renderNode)}
+            {node.files.map(renderFile)}
+          </ul>
+        )}
+      </li>
+    );
+  };
 
   return (
     <section>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <SectionHeading label={t(labelKey)} desc={t(descKey)} />
-        {gh?.configured &&
-          (gh.server_mode || gh.linked) &&
-          (section === "material" || gh.can_archive) && (
-            <Button size="sm" onClick={() => setContributeOpen(true)}>
-              {t("content.contribute")}
-            </Button>
-          )}
+        {canContribute && (
+          <Button
+            size="sm"
+            onClick={() => setContribute({ open: true, intent: "upload", folder: "" })}
+          >
+            {t("content.contribute")}
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,320px)_1fr]">
@@ -168,40 +312,22 @@ export function ContentBrowser({
               </>
             )}
             {listError && <p className="text-[var(--primary)]">{listError}</p>}
-            {entries && entries.length === 0 && (
+            {entries && !hasAny && !query_ && (
               <p className="text-xs text-[var(--text-muted)]">{t("content.empty")}</p>
             )}
-            {groups.map(([folder, items]) => (
-              <div key={folder || "__root"} className="mb-3 last:mb-0">
-                <div className="mb-1 flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
-                  <Folder className="h-3 w-3" aria-hidden /> {folder || t("content.root")}
-                </div>
-                <ul className="flex flex-col">
-                  {items.map((e) => {
-                    const Icon = ICON[e.kind];
-                    return (
-                      <li key={e.path}>
-                        <button
-                          type="button"
-                          onClick={() => open(e)}
-                          aria-current={selected?.path === e.path ? "true" : undefined}
-                          className={cn(
-                            "flex w-full items-center gap-2 border-l-2 px-2 py-1.5 text-left transition-colors rounded-[var(--radius-inner)]",
-                            selected?.path === e.path
-                              ? "border-[var(--primary)] bg-[var(--surface-2)]"
-                              : "border-transparent hover:bg-[var(--surface-2)]",
-                          )}
-                        >
-                          <Icon className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" aria-hidden />
-                          <span className="truncate">{e.name}</span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+            {entries && (hasAny || canContribute) && (
+              <div className="mb-1 flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
+                <Folder className="h-3 w-3" aria-hidden /> {t("content.root")}
+                {renderFolderActions("", t("content.root"))}
               </div>
-            ))}
-            {entries && entries.length > 0 && groups.length === 0 && (
+            )}
+            {hasAny && (
+              <ul className="flex flex-col">
+                {tree.folders.map(renderNode)}
+                {tree.files.map(renderFile)}
+              </ul>
+            )}
+            {entries && entries.length > 0 && !hasAny && query_ && (
               <p className="text-xs text-[var(--text-muted)]">{t("content.noMatch")}</p>
             )}
           </div>
@@ -223,6 +349,13 @@ export function ContentBrowser({
                       <Download className="h-4 w-4" /> {t("content.download")}
                     </a>
                   </Button>
+                  {selected.github_url && (
+                    <Button asChild size="sm" variant="outline">
+                      <a href={selected.github_url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4" /> {t("content.openGithub")}
+                      </a>
+                    </Button>
+                  )}
                   {selected.kind !== "text" && (
                     <Button asChild size="sm" variant="outline">
                       <a
@@ -277,7 +410,16 @@ export function ContentBrowser({
         </Window>
       </div>
 
-      <ContributeModal open={contributeOpen} onOpenChange={setContributeOpen} section={section} />
+      <ContributeModal
+        open={contribute.open}
+        onOpenChange={(o) => setContribute((c) => ({ ...c, open: o }))}
+        section={section}
+        intent={contribute.intent}
+        initialFolder={contribute.folder}
+        folders={folders}
+        existingPaths={existingPaths}
+        onDone={() => void load()}
+      />
     </section>
   );
 }

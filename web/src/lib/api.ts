@@ -13,6 +13,7 @@ import type {
   ContentFile,
   ContentList,
   ContentSection,
+  ContributeResult,
   GithubStatus,
   NotificationFilter,
   NotificationPage,
@@ -149,7 +150,9 @@ export const api = {
   toggleEventInterest: (eventId: number) =>
     request<InterestState>(`/events/${eventId}/interest`, { method: "POST" }),
 
-  listContent: (section: ContentSection) => request<ContentList>(`/content/${section}`),
+  // no-store: the listing must reflect a just-made commit (server cache is invalidated).
+  listContent: (section: ContentSection) =>
+    request<ContentList>(`/content/${section}`, { cache: "no-store" }),
   readContent: (section: ContentSection, path: string) =>
     request<ContentFile>(`/content/${section}/raw?path=${encodeURIComponent(path)}`),
   /** Absolute URL to stream a file (any type). ``download`` forces a download;
@@ -188,16 +191,18 @@ export const api = {
 
   githubStatus: () => request<GithubStatus>("/github/status"),
   unlinkGithub: () => request<void>("/github/link", { method: "DELETE" }),
+  /** Commit a file (or, with `create_folder`, a `<folder>/.gitkeep`) straight to
+   * the repo's main branch. Overwrites an existing file at the same path. */
   contributeContent: (body: {
     section: ContentSection;
     path: string;
-    content: string;
+    content?: string;
     encoding?: "utf-8" | "base64";
-    mode?: "pr" | "push";
     message?: string | null;
-    title?: string | null;
-  }) => request<{ pr_url: string }>("/github/contribute", {
-    method: "POST",
-    body: JSON.stringify(body),
-  }),
+    create_folder?: boolean;
+  }) =>
+    request<ContributeResult>("/github/contribute", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };

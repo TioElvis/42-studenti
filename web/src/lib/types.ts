@@ -145,11 +145,20 @@ export interface ContentEntry {
   size: number;
   kind: ContentKind;
   mime: string;
+  sha: string; // git blob sha (metadata only)
+  github_url: string; // github.com blob URL
+  raw_url: string; // raw.githubusercontent.com URL
 }
 
 export interface ContentList {
   section: ContentSection;
   entries: ContentEntry[];
+  folders: string[]; // every folder path, including empty (.gitkeep-only) ones
+}
+
+export interface ContributeResult {
+  url: string;
+  action: "created" | "updated";
 }
 
 export interface ContentFile {
