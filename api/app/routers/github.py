@@ -1,4 +1,4 @@
-"""Link a student's GitHub account and contribute files to assets/ via PR.
+"""Link a student's GitHub account and contribute files to assets/ by direct commit.
 
 The link flow mirrors the 42 OAuth flow (state-cookie CSRF, server-side code
 exchange). Contributions are confined to assets/<section>/ and run with the
@@ -132,12 +132,19 @@ async def contribute(
         raise HTTPException(status_code=409, detail="Collega prima il tuo account GitHub.")
 
     try:
-        rel = content_service.confine_rel(data.path)  # never escapes assets/<section>/
+        if data.create_folder:
+            rel = content_service.keep_path(data.path)  # <folder>/.gitkeep
+        else:
+            rel = content_service.confine_rel(data.path)  # never escapes assets/<section>/
     except NotFoundError as exc:
         raise HTTPException(status_code=400, detail="Percorso non valido.") from exc
 
     # Normalize the body to base64 and enforce the size cap.
-    if data.encoding == "base64":
+    if data.create_folder:
+        content_b64 = ""  # empty .gitkeep
+    elif not data.content:
+        raise HTTPException(status_code=400, detail="Contenuto mancante.")
+    elif data.encoding == "base64":
         try:
             raw = base64.b64decode(data.content, validate=True)
         except (binascii.Error, ValueError) as exc:
@@ -146,51 +153,30 @@ async def contribute(
     else:
         raw = data.content.encode("utf-8")
         content_b64 = base64.b64encode(raw).decode("ascii")
-    if len(raw) > _MAX_CONTENT_BYTES:
+    if not data.create_folder and len(raw) > _MAX_CONTENT_BYTES:
         raise HTTPException(status_code=413, detail="File troppo grande (max 5 MiB).")
 
-    who = user.github_username or user.login
-    message = (data.message or "").strip() or f"Add {data.section}/{rel}"
-    title = (data.title or "").strip() or message
-    body = f"Contributo di @{who} via 42 Studenti."
+    message = (data.message or "").strip() or None  # default Add/Update set on commit
     try:
         if server:
-            url = await github_user.contribute_server(
+            who = user.github_username or user.login
+            url, action = await github_user.contribute_server(
                 settings=settings,
-                mode=data.mode,
                 section=data.section,
                 rel_path=rel,
                 content_b64=content_b64,
                 message=message,
-                title=title,
-                body=body,
                 author_name=user.github_username or user.display_name or user.login,
                 author_login=who,
             )
-            if data.mode == "push":
-                content_service.invalidate_github_cache(data.section)
-        elif data.mode == "push":
-            url = await github_user.contribute_direct_push(
-                settings=settings,
-                token=student_token,
-                section=data.section,
-                rel_path=rel,
-                content_b64=content_b64,
-                message=message,
-            )
-            # The branch changed → drop the cached listing so it shows at once.
-            content_service.invalidate_github_cache(data.section)
         else:
-            url = await github_user.contribute_via_pr(
+            url, action = await github_user.contribute_direct_push(
                 settings=settings,
                 token=student_token,
-                login=user.github_username,
                 section=data.section,
                 rel_path=rel,
                 content_b64=content_b64,
                 message=message,
-                title=title,
-                body=body,
             )
     except github_user.GithubAuthRequired as exc:
         raise HTTPException(
@@ -200,7 +186,9 @@ async def contribute(
     except github_user.GithubApiError as exc:
         raise HTTPException(status_code=502, detail=str(exc) or "GitHub ha rifiutato.") from exc
 
-    return ContributeOut(pr_url=url)
+    # The branch changed → drop the cached listing so the change shows at once.
+    content_service.invalidate_github_cache(data.section)
+    return ContributeOut(url=url, action=action)  # type: ignore[arg-type]
 
 
 def _frontend_redirect(settings, query: str) -> RedirectResponse:

@@ -1,27 +1,24 @@
 """File-based content for Materiale / Archivio.
 
-Content lives in the repo under ``assets/material/**`` and ``assets/archive/**``
-(committed via GitHub, e.g. ``assets/material/exam02/help.md``) and is served
-read-only. Paths are canonicalized and confined to the section root — no path
-traversal, no following symlinks out of the tree.
-
-Any file type is listed. Text files are returned inline (JSON); binary files
-(PDF, images, Office docs, …) are streamed by the router and classified by
-``kind`` so the UI can render images/PDFs and offer a download for the rest.
+Content lives ONLY on GitHub under ``assets/material/**`` and
+``assets/archive/**``. The server never mirrors it to disk: listings use the Git
+Trees API (metadata only: path, size, sha) and file bytes are proxied through
+memory on demand (the repo is private, so browsers can't hit raw URLs). Paths
+are confined to the section root — no traversal.
 """
 
 from __future__ import annotations
 
 import asyncio
 import time
+from urllib.parse import quote
 from dataclasses import dataclass
-from pathlib import Path
 
 import httpx
 
 from ..config import Settings
 from ..schemas.content import ContentEntry, ContentFile, ContentList
-from .exceptions import NotFoundError
+from .exceptions import ContentUnavailableError, NotFoundError
 
 # Section name -> subfolder under assets/. Allow-list; nothing else is reachable.
 SECTIONS: dict[str, str] = {"material": "material", "archive": "archive"}
@@ -73,74 +70,13 @@ def _kind_for(suffix: str) -> str:
     return "other"
 
 
-def _section_root(settings: Settings, section: str) -> Path:
-    if section not in SECTIONS:
-        raise NotFoundError("Unknown content section")
-    return (Path(settings.assets_dir) / SECTIONS[section]).resolve()
-
-
-def _resolve_within(root: Path, rel: str) -> Path:
-    """Resolve ``rel`` under ``root``, rejecting anything that escapes it."""
-    target = (root / rel).resolve()
-    try:
-        target.relative_to(root)
-    except ValueError as exc:
-        raise NotFoundError("File not found") from exc
-    if not target.is_file() or target.name.startswith("."):
-        raise NotFoundError("File not found")
-    return target
-
-
-def list_entries(settings: Settings, section: str) -> ContentList:
-    root = _section_root(settings, section)
-    entries: list[ContentEntry] = []
-    if root.is_dir():
-        for p in sorted(root.rglob("*")):
-            if not p.is_file() or p.name.startswith("."):
-                continue
-            rel = p.relative_to(root)
-            folder = rel.parent.as_posix()
-            suffix = p.suffix.lower()
-            entries.append(
-                ContentEntry(
-                    path=rel.as_posix(),
-                    name=p.name,
-                    folder="" if folder == "." else folder,
-                    size=p.stat().st_size,
-                    kind=_kind_for(suffix),
-                    mime=_mime_for(suffix),
-                )
-            )
-    return ContentList(section=section, entries=entries)
-
-
-def read_file(settings: Settings, section: str, rel: str) -> ContentFile:
-    """Return a text document's content (for inline rendering)."""
-    root = _section_root(settings, section)
-    target = _resolve_within(root, rel)
-    if target.suffix.lower() not in _TEXT_EXT:
-        raise NotFoundError("This file type can't be shown as text")
-    if target.stat().st_size > _MAX_TEXT_BYTES:
-        raise NotFoundError("File too large to display")
-    content = target.read_text(encoding="utf-8", errors="replace")
-    return ContentFile(path=target.relative_to(root).as_posix(), name=target.name, content=content)
-
-
-def resolve_file(settings: Settings, section: str, rel: str) -> tuple[Path, str]:
-    """Resolve a file for streaming (any type); returns (path, media_type)."""
-    root = _section_root(settings, section)
-    target = _resolve_within(root, rel)
-    if target.stat().st_size > _MAX_FILE_BYTES:
-        raise NotFoundError("File too large")
-    return target, _mime_for(target.suffix.lower())
-
-
 # ---------------------------------------------------------------------------
-# GitHub-backed source (optional): read content live from a repo's assets/ so
-# a push/merge updates the site without a redeploy. Falls back to the local
-# source on any availability error; a genuine 404 propagates as NotFoundError.
+# GitHub-backed source: read content live from the repo's assets/ so a push
+# updates the site without a redeploy. A GitHub outage raises
+# ContentUnavailableError (502); a genuine 404 raises NotFoundError.
 # ---------------------------------------------------------------------------
 
+_KEEP = ".gitkeep"  # placeholder committed to create an empty folder
 _GITHUB_API = "https://api.github.com"
 _GITHUB_RAW = "https://raw.githubusercontent.com"
 _GH_UA = "42-studenti"  # GitHub requires a User-Agent; generic app name, no PII.
@@ -148,12 +84,11 @@ _GH_UA = "42-studenti"  # GitHub requires a User-Agent; generic app name, no PII
 
 @dataclass
 class FilePayload:
-    """A file to stream: either a local path or in-memory bytes (GitHub)."""
+    """A file to stream: in-memory bytes fetched from GitHub (never on disk)."""
 
     name: str
     media_type: str
-    path: Path | None = None
-    data: bytes | None = None
+    data: bytes
 
 
 class _GitHubUnavailable(Exception):
@@ -167,7 +102,7 @@ _gh_lock = asyncio.Lock()
 
 
 def invalidate_github_cache(section: str | None = None) -> None:
-    """Drop the cached listing (used after a direct push in Step 11)."""
+    """Drop the cached listing (used after a commit so it shows at once)."""
     if section is None:
         _gh_tree_cache.clear()
     else:
@@ -182,18 +117,38 @@ def _suffix_of(name: str) -> str:
     return f".{name.rsplit('.', 1)[-1].lower()}" if "." in name else ""
 
 
-def _safe_rel(rel: str) -> str:
-    """Confine a GitHub-bound relative path to the section (no traversal)."""
-    cleaned = rel.strip().lstrip("/")
-    segments = cleaned.split("/")
-    if not cleaned or any(seg in ("", "..") or seg.startswith(".") for seg in segments):
+def _validate_segments(rel: str) -> str:
+    """Strict relative-path check: no empty/``..``/dot segments, no backslash,
+    no leading or trailing slash."""
+    if not rel or rel != rel.strip() or "\\" in rel or "\x00" in rel:
         raise NotFoundError("File not found")
-    return cleaned
+    if rel.startswith("/") or rel.endswith("/"):
+        raise NotFoundError("File not found")
+    segments = rel.split("/")
+    for seg in segments:
+        if seg in ("", ".", "..") or seg.startswith("."):
+            raise NotFoundError("File not found")
+    return rel
+
+
+def _safe_rel(rel: str) -> str:
+    """Confine a GitHub-bound file path to the section (no traversal)."""
+    return _validate_segments(rel)
 
 
 def confine_rel(rel: str) -> str:
-    """Public: validate a relative path stays under the section (no traversal)."""
+    """Public: validate a relative file path stays under the section."""
     return _safe_rel(rel)
+
+
+def confine_folder(folder: str) -> str:
+    """Public: validate a (possibly nested) folder path, e.g. ``exam02/ex03``."""
+    return _validate_segments(folder)
+
+
+def keep_path(folder: str) -> str:
+    """The placeholder file that materializes an empty folder on GitHub."""
+    return f"{confine_folder(folder)}/{_KEEP}"
 
 
 def section_allowed(section: str) -> bool:
@@ -235,6 +190,9 @@ async def _gh_listing(settings: Settings, section: str) -> ContentList:
             raise _GitHubUnavailable()
         prefix = f"assets/{SECTIONS[section]}/"
         entries: list[ContentEntry] = []
+        folders: set[str] = set()
+        blob_base = f"https://github.com/{repo}/blob/{branch}/{prefix}"
+        raw_base = f"{_GITHUB_RAW}/{repo}/{branch}/{prefix}"
         for item in resp.json().get("tree") or []:
             if item.get("type") != "blob":
                 continue
@@ -243,23 +201,33 @@ async def _gh_listing(settings: Settings, section: str) -> ContentList:
                 continue
             rel = path[len(prefix):]
             segments = rel.split("/")
-            if not rel or any(seg.startswith(".") for seg in segments):
+            if not rel or any(seg in ("", "..") for seg in segments):
                 continue
             name = segments[-1]
-            folder = "/".join(segments[:-1])
+            parent = segments[:-1]
+            if any(seg.startswith(".") for seg in parent):
+                continue
+            # Every ancestor is a visible folder (even if it only holds .gitkeep).
+            for i in range(1, len(parent) + 1):
+                folders.add("/".join(parent[:i]))
+            if name.startswith("."):  # .gitkeep & friends: folder marker only
+                continue
             suffix = _suffix_of(name)
             entries.append(
                 ContentEntry(
                     path=rel,
                     name=name,
-                    folder=folder,
+                    folder="/".join(parent),
                     size=int(item.get("size") or 0),
                     kind=_kind_for(suffix),
                     mime=_mime_for(suffix),
+                    sha=str(item.get("sha") or ""),
+                    github_url=blob_base + quote(rel),
+                    raw_url=raw_base + quote(rel),
                 )
             )
         entries.sort(key=lambda e: e.path)
-        result = ContentList(section=section, entries=entries)
+        result = ContentList(section=section, entries=entries, folders=sorted(folders))
         _gh_tree_cache[section] = (time.monotonic(), result)
         return result
 
@@ -317,38 +285,35 @@ async def _gh_file(settings: Settings, section: str, rel: str) -> FilePayload:
     return FilePayload(name=name, media_type=_mime_for(_suffix_of(name)), data=data)
 
 
-# --- Public async orchestrators (GitHub when configured, else local) --------
+# --- Public async orchestrators ---------------------------------------------
+
+
+def _require_github(settings: Settings, section: str) -> None:
+    if section not in SECTIONS:
+        raise NotFoundError("Unknown content section")
+    if not _github_enabled(settings):
+        raise ContentUnavailableError("Contenuti non configurati.")
 
 
 async def get_listing(settings: Settings, section: str) -> ContentList:
-    if section not in SECTIONS:
-        raise NotFoundError("Unknown content section")
-    if _github_enabled(settings):
-        try:
-            return await _gh_listing(settings, section)
-        except _GitHubUnavailable:
-            pass  # fall back to the local tree
-    return list_entries(settings, section)
+    _require_github(settings, section)
+    try:
+        return await _gh_listing(settings, section)
+    except _GitHubUnavailable as exc:
+        raise ContentUnavailableError("GitHub non raggiungibile.") from exc
 
 
 async def get_text(settings: Settings, section: str, rel: str) -> ContentFile:
-    if section not in SECTIONS:
-        raise NotFoundError("Unknown content section")
-    if _github_enabled(settings):
-        try:
-            return await _gh_text(settings, section, rel)
-        except _GitHubUnavailable:
-            pass
-    return read_file(settings, section, rel)
+    _require_github(settings, section)
+    try:
+        return await _gh_text(settings, section, rel)
+    except _GitHubUnavailable as exc:
+        raise ContentUnavailableError("GitHub non raggiungibile.") from exc
 
 
 async def get_file(settings: Settings, section: str, rel: str) -> FilePayload:
-    if section not in SECTIONS:
-        raise NotFoundError("Unknown content section")
-    if _github_enabled(settings):
-        try:
-            return await _gh_file(settings, section, rel)
-        except _GitHubUnavailable:
-            pass
-    path, mime = resolve_file(settings, section, rel)
-    return FilePayload(name=path.name, media_type=mime, path=path)
+    _require_github(settings, section)
+    try:
+        return await _gh_file(settings, section, rel)
+    except _GitHubUnavailable as exc:
+        raise ContentUnavailableError("GitHub non raggiungibile.") from exc

@@ -8,16 +8,11 @@ the rest of the code depends on a typed ``Settings`` object rather than on
 from __future__ import annotations
 
 from functools import lru_cache
-from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-# Repo-root ``assets/`` dir (…/42-studenti/assets): holds the file-based
-# Materiale / Archivio content served by the content router.
-_DEFAULT_ASSETS_DIR = str(Path(__file__).resolve().parents[2] / "assets")
 
 # A browser-like User-Agent for every outbound call to 42: api.intra.42.fr is
 # behind Cloudflare, which serves a 403 bot challenge to the default
@@ -77,15 +72,13 @@ class Settings(BaseSettings):
     # --- Events cache TTL (seconds) to stay well under 42 API rate limits ---
     events_cache_ttl: int = Field(default=300, alias="EVENTS_CACHE_TTL")
 
-    # --- File-based content (Materiale / Archivio) served from assets/ ---
-    assets_dir: str = Field(default=_DEFAULT_ASSETS_DIR, alias="ASSETS_DIR")
+    # --- Materiale / Archivio (read from GitHub; assets/ is never mirrored locally) ---
     # Client/proxy cache lifetime (seconds) for cacheable GET responses.
     http_cache_seconds: int = Field(default=60, alias="HTTP_CACHE_SECONDS")
 
-    # --- Optional: serve Materiale/Archivio live from a GitHub repo ---
-    # When GITHUB_REPO is set (e.g. "TioElvis/42-studenti"), content is read
-    # from that repo's assets/ via the GitHub API (public repo = no token
-    # needed); otherwise it falls back to the local assets_dir.
+    # --- Materiale/Archivio source: a GitHub repo's assets/ ---
+    # GITHUB_REPO (e.g. "TioElvis/42-studenti") is required for content; a
+    # private repo also needs GITHUB_WRITE_TOKEN for reads.
     github_repo: str = Field(default="", alias="GITHUB_REPO")
     github_branch: str = Field(default="main", alias="GITHUB_BRANCH")
     github_cache_ttl: int = Field(default=300, alias="GITHUB_CACHE_TTL")

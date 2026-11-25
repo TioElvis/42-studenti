@@ -1,14 +1,11 @@
 """Linked-GitHub adapter: OAuth token storage (encrypted) + contributing a
-file to the repo's assets/ as a fork-based Pull Request on the student's behalf.
+file straight to the repo's assets/ (direct commit, no PRs) on the student's behalf.
 
 The student's token is Fernet-encrypted at rest (``app/crypto.py``) and never
 leaves the backend. Writes are confined by the caller to ``assets/<section>/``.
 """
 
 from __future__ import annotations
-
-import asyncio
-import time
 
 import httpx
 
@@ -94,6 +91,55 @@ async def fetch_github_login(token: str) -> str:
     return login
 
 
+async def _commit_file(
+    client: httpx.AsyncClient,
+    *,
+    upstream: str,
+    base: str,
+    section: str,
+    rel_path: str,
+    content_b64: str,
+    message: str | None,
+    author: dict[str, str] | None = None,
+) -> tuple[str, str]:
+    """Commit ``assets/<section>/<rel_path>`` straight to ``base``.
+
+    GETs the file first: if it exists its blob sha goes in the PUT so GitHub
+    overwrites it (no 422). Returns ``(url, action)`` with action
+    ``"created"`` or ``"updated"``. ``message=None`` → "Add/Update <path>".
+    """
+    full_path = f"assets/{section}/{rel_path}"
+    existing = await client.get(f"/repos/{upstream}/contents/{full_path}", params={"ref": base})
+    if existing.status_code in (401, 403):
+        raise GithubAuthRequired("No write access to the repo")
+    sha = None
+    if existing.status_code == 200:
+        body = existing.json()
+        sha = body.get("sha") if isinstance(body, dict) else None
+    action = "updated" if sha else "created"
+
+    payload: dict[str, object] = {
+        "message": message or f"{'Update' if sha else 'Add'} {section}/{rel_path}",
+        "content": content_b64,
+        "branch": base,
+    }
+    if sha:
+        payload["sha"] = sha
+    if author:
+        payload["author"] = author
+        payload["committer"] = author
+    put = await client.put(f"/repos/{upstream}/contents/{full_path}", json=payload)
+    if put.status_code in (401, 403):
+        raise GithubAuthRequired("Serve accesso in scrittura al repository")
+    if put.status_code not in (200, 201):
+        raise GithubApiError("Couldn't commit the file")
+    data = put.json()
+    url = (data.get("content") or {}).get("html_url") or (
+        (data.get("commit") or {}).get("html_url")
+    )
+    return url or f"https://github.com/{upstream}/blob/{base}/{full_path}", action
+
+
 async def contribute_direct_push(
     *,
     settings: Settings,
@@ -101,237 +147,49 @@ async def contribute_direct_push(
     section: str,
     rel_path: str,
     content_b64: str,
-    message: str,
-) -> str:
-    """Commit a file straight to the base branch of the upstream repo.
-
-    Requires GitHub write access (owner/collaborator); otherwise GitHub rejects
-    it and we raise ``GithubAuthRequired``. Returns the committed file's URL.
-    """
-    upstream = settings.github_repo
-    base = settings.github_branch
-    full_path = f"assets/{section}/{rel_path}"
+    message: str | None = None,
+) -> tuple[str, str]:
+    """Commit with the student's own token (needs repo write access)."""
     async with httpx.AsyncClient(
         base_url=_GITHUB_API, timeout=20.0, headers=_headers(token)
     ) as client:
-        existing = await client.get(
-            f"/repos/{upstream}/contents/{full_path}", params={"ref": base}
+        return await _commit_file(
+            client,
+            upstream=settings.github_repo,
+            base=settings.github_branch,
+            section=section,
+            rel_path=rel_path,
+            content_b64=content_b64,
+            message=message,
         )
-        if existing.status_code in (401, 403):
-            raise GithubAuthRequired("No write access to the repo")
-        sha = existing.json().get("sha") if existing.status_code == 200 else None
-
-        payload: dict[str, object] = {"message": message, "content": content_b64, "branch": base}
-        if sha:
-            payload["sha"] = sha
-        put = await client.put(f"/repos/{upstream}/contents/{full_path}", json=payload)
-        if put.status_code in (401, 403):
-            raise GithubAuthRequired("Serve accesso in scrittura al repository")
-        if put.status_code not in (200, 201):
-            raise GithubApiError("Couldn't push the file")
-        data = put.json()
-        url = (data.get("content") or {}).get("html_url") or (
-            (data.get("commit") or {}).get("html_url")
-        )
-        return url or f"https://github.com/{upstream}/blob/{base}/{full_path}"
 
 
 async def contribute_server(
     *,
     settings: Settings,
-    mode: str,
     section: str,
     rel_path: str,
     content_b64: str,
-    message: str,
-    title: str,
-    body: str,
+    message: str | None = None,
     author_name: str,
     author_login: str,
-) -> str:
-    """Commit a contribution using the backend's own write token (private repo).
-
-    ``mode`` is "push" (straight to the base branch) or "pr" (a branch + PR).
-    The commit is attributed to the student via the author/committer fields.
-    """
-    token = settings.github_write_token
-    upstream = settings.github_repo
-    base = settings.github_branch
-    full_path = f"assets/{section}/{rel_path}"
+) -> tuple[str, str]:
+    """Commit with the backend's own write token (private repo), attributed to
+    the student via the author/committer fields."""
     author = {
         "name": author_name or author_login,
         "email": f"{author_login}@users.noreply.github.com",
     }
-
     async with httpx.AsyncClient(
-        base_url=_GITHUB_API, timeout=20.0, headers=_headers(token)
+        base_url=_GITHUB_API, timeout=20.0, headers=_headers(settings.github_write_token)
     ) as client:
-        if mode == "push":
-            target_branch = base
-        else:
-            ref = await client.get(f"/repos/{upstream}/git/ref/heads/{base}")
-            if ref.status_code != 200:
-                raise GithubApiError("Couldn't read the base branch")
-            base_sha = ref.json().get("object", {}).get("sha")
-            target_branch = f"contrib/{section}-{int(time.time())}"
-            mk = await client.post(
-                f"/repos/{upstream}/git/refs",
-                json={"ref": f"refs/heads/{target_branch}", "sha": base_sha},
-            )
-            if mk.status_code not in (200, 201):
-                raise GithubApiError("Couldn't create the branch")
-
-        existing = await client.get(
-            f"/repos/{upstream}/contents/{full_path}", params={"ref": target_branch}
+        return await _commit_file(
+            client,
+            upstream=settings.github_repo,
+            base=settings.github_branch,
+            section=section,
+            rel_path=rel_path,
+            content_b64=content_b64,
+            message=message,
+            author=author,
         )
-        sha = existing.json().get("sha") if existing.status_code == 200 else None
-        payload: dict[str, object] = {
-            "message": message,
-            "content": content_b64,
-            "branch": target_branch,
-            "author": author,
-            "committer": author,
-        }
-        if sha:
-            payload["sha"] = sha
-        put = await client.put(f"/repos/{upstream}/contents/{full_path}", json=payload)
-        if put.status_code not in (200, 201):
-            raise GithubApiError("Couldn't commit the file (check the server token's access)")
-
-        if mode == "push":
-            data = put.json()
-            return (data.get("content") or {}).get("html_url") or (
-                f"https://github.com/{upstream}/blob/{base}/{full_path}"
-            )
-
-        pr = await client.post(
-            f"/repos/{upstream}/pulls",
-            json={"title": title, "head": target_branch, "base": base, "body": body},
-        )
-        if pr.status_code not in (200, 201):
-            raise GithubApiError("Couldn't open the pull request")
-        url = pr.json().get("html_url")
-        if not isinstance(url, str):
-            raise GithubApiError("GitHub didn't return a PR link")
-        return url
-
-
-# --- per-student contribution flow (fork -> branch -> commit -> PR) ----------
-
-
-async def contribute_via_pr(
-    *,
-    settings: Settings,
-    token: str,
-    login: str,
-    section: str,
-    rel_path: str,
-    content_b64: str,
-    message: str,
-    title: str,
-    body: str,
-) -> str:
-    """Create a fork-based PR adding/updating ``assets/<section>/<rel_path>``.
-
-    Returns the pull request's HTML URL. Uses only the student's token.
-    """
-    upstream = settings.github_repo
-    reponame = upstream.split("/", 1)[1]
-    base = settings.github_branch
-    full_path = f"assets/{section}/{rel_path}"
-
-    def _auth(resp: httpx.Response) -> None:
-        if resp.status_code in (401, 403):
-            raise GithubAuthRequired("GitHub denied the operation (check access/scope)")
-
-    async with httpx.AsyncClient(
-        base_url=_GITHUB_API, timeout=20.0, headers=_headers(token)
-    ) as client:
-        # 0. Does the student already have push access (owner / collaborator)?
-        #    If so we work on the upstream directly — you can't fork your own repo.
-        info = await client.get(f"/repos/{upstream}")
-        _auth(info)
-        if info.status_code == 404:
-            raise GithubApiError(
-                "Repository non accessibile: se è privato serve lo scope 'repo' "
-                "(o rendilo pubblico)."
-            )
-        if info.status_code != 200:
-            raise GithubApiError("Couldn't read the repository")
-        can_push = bool((info.json().get("permissions") or {}).get("push"))
-
-        if can_push:
-            work_repo = upstream
-            head_owner = upstream.split("/", 1)[0]
-            ref = await client.get(f"/repos/{work_repo}/git/ref/heads/{base}")
-            _auth(ref)
-            if ref.status_code != 200:
-                raise GithubApiError("Couldn't read the base branch")
-            base_sha = ref.json().get("object", {}).get("sha")
-        else:
-            # Fork flow for non-collaborators.
-            fork_resp = await client.post(f"/repos/{upstream}/forks")
-            _auth(fork_resp)
-            if fork_resp.status_code not in (200, 202):
-                raise GithubApiError("Couldn't create your fork")
-            work_repo = fork_resp.json().get("full_name") or f"{login}/{reponame}"
-            head_owner = login
-            base_sha = None
-            for _ in range(6):  # a fresh fork is created asynchronously
-                fref = await client.get(f"/repos/{work_repo}/git/ref/heads/{base}")
-                if fref.status_code == 200:
-                    base_sha = fref.json().get("object", {}).get("sha")
-                    break
-                if fref.status_code not in (404, 409):
-                    _auth(fref)
-                    raise GithubApiError("Couldn't read your fork")
-                await asyncio.sleep(1.0)
-        if not base_sha:
-            raise GithubApiError("La tua fork non è pronta — riprova tra un attimo")
-
-        # Create a working branch on the work repo.
-        new_branch = f"contrib/{section}-{int(time.time())}"
-        mk = await client.post(
-            f"/repos/{work_repo}/git/refs",
-            json={"ref": f"refs/heads/{new_branch}", "sha": base_sha},
-        )
-        _auth(mk)
-        if mk.status_code not in (200, 201):
-            raise GithubApiError("Couldn't create a branch")
-
-        # If the file already exists on that branch, we need its blob sha.
-        existing = await client.get(
-            f"/repos/{work_repo}/contents/{full_path}", params={"ref": new_branch}
-        )
-        sha = existing.json().get("sha") if existing.status_code == 200 else None
-
-        # Commit the file.
-        payload: dict[str, object] = {
-            "message": message,
-            "content": content_b64,
-            "branch": new_branch,
-        }
-        if sha:
-            payload["sha"] = sha
-        put = await client.put(f"/repos/{work_repo}/contents/{full_path}", json=payload)
-        _auth(put)
-        if put.status_code not in (200, 201):
-            raise GithubApiError("Couldn't commit the file")
-
-        # Open the PR against the upstream repo (head may be the fork's owner).
-        pr = await client.post(
-            f"/repos/{upstream}/pulls",
-            json={
-                "title": title,
-                "head": f"{head_owner}:{new_branch}",
-                "base": base,
-                "body": body,
-            },
-        )
-        _auth(pr)
-        if pr.status_code not in (200, 201):
-            raise GithubApiError("Couldn't open the pull request")
-        url = pr.json().get("html_url")
-        if not isinstance(url, str):
-            raise GithubApiError("GitHub didn't return a PR link")
-        return url

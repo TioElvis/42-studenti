@@ -1,4 +1,4 @@
-"""Materiale / Archivio: read-only file content served from assets/."""
+"""Materiale / Archivio: read-only content proxied from the repo's assets/ on GitHub."""
 
 from __future__ import annotations
 
@@ -6,7 +6,6 @@ import re
 from urllib.parse import quote
 
 from fastapi import APIRouter, Query, Response
-from fastapi.responses import FileResponse
 
 from ..deps import CurrentUser, SettingsDep
 from ..schemas.content import ContentFile, ContentList
@@ -86,7 +85,5 @@ async def serve_file(
         headers["Content-Security-Policy"] = f"frame-ancestors 'self' {settings.frontend_url}"
     else:
         headers["Content-Security-Policy"] = "default-src 'none'"
-    # Local file → FileResponse (efficient); GitHub bytes → in-memory Response.
-    if payload.path is not None:
-        return FileResponse(payload.path, media_type=mime, headers=headers)
-    return Response(content=payload.data or b"", media_type=mime, headers=headers)
+    # GitHub bytes are proxied through memory only (never written to disk).
+    return Response(content=payload.data, media_type=mime, headers=headers)

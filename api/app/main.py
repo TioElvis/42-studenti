@@ -34,7 +34,12 @@ from .routers import (
     students,
     ws,
 )
-from .services.exceptions import ConflictError, ForbiddenError, NotFoundError
+from .services.exceptions import (
+    ConflictError,
+    ContentUnavailableError,
+    ForbiddenError,
+    NotFoundError,
+)
 
 logger = logging.getLogger("app")
 
@@ -108,7 +113,7 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
-        # The content file endpoint streams assets the web app embeds (inline
+        # The content file endpoint proxies GitHub bytes the web app embeds (inline
         # PDFs in an <iframe>); it sets its own scoped frame-ancestors CSP, so we
         # skip the blanket X-Frame-Options: DENY only for it. Everything else
         # stays un-framable. (setdefault leaves the endpoint's own CSP intact.)
@@ -151,6 +156,12 @@ def _register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(NotFoundError)
     async def _not_found(request: Request, exc: NotFoundError) -> JSONResponse:
         return JSONResponse(status_code=404, content={"detail": str(exc) or "Non trovato."})
+
+    @app.exception_handler(ContentUnavailableError)
+    async def _content_unavailable(request: Request, exc: ContentUnavailableError) -> JSONResponse:
+        return JSONResponse(
+            status_code=502, content={"detail": str(exc) or "Contenuti non disponibili."}
+        )
 
     @app.exception_handler(ForbiddenError)
     async def _forbidden(request: Request, exc: ForbiddenError) -> JSONResponse:

@@ -21,3 +21,7 @@ class ForbiddenError(ServiceError):
 
 class ConflictError(ServiceError):
     """The action conflicts with the current state (e.g. the sondaggio is full)."""
+
+
+class ContentUnavailableError(ServiceError):
+    """The upstream content source (GitHub) is missing or unreachable."""

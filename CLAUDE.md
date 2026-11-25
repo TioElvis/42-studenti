@@ -59,6 +59,14 @@ Never hand-edit `api/vendor/42api/src/intra42/_sync/` (generated). Edit
   `web/src/app/globals.css`. Palettes come from `assets/`.
 - **Types.** TypeScript `strict` + `noUncheckedIndexedAccess`; Python type hints.
 
+## assets/ isolation
+
+Materiale / Archivio content lives only on GitHub (`assets/material|archive`).
+Never read, download, clone or mirror `assets/` content locally (agents, scripts,
+backend). The API lists via the Git Trees API (metadata) and proxies bytes
+through memory only. Contributions are direct commits to `GITHUB_BRANCH`
+(no PRs); same path = update.
+
 ## Roadmap status
 
 - Step 1 La Bacheca: DONE. Step 2 Eventi (official 42 Roma events, cached): DONE.
