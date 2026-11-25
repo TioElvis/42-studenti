@@ -30,6 +30,7 @@ async def list_posts(
     user: CurrentUser,
     category: list[PostCategory] | None = Query(default=None),
     post_type: PostType | None = Query(default=None),
+    q: str | None = Query(default=None, max_length=64),
     cursor: int | None = Query(default=None, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
 ) -> PostPage:
@@ -39,6 +40,7 @@ async def list_posts(
         viewer_id=user.id,
         categories=category,
         post_type=post_type,
+        q=q,
         cursor=cursor,
         limit=limit,
     )

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Select, delete, func, select
+from sqlalchemy import Select, delete, exists, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -32,6 +32,34 @@ from ..schemas.user import UserPublic
 from .exceptions import ConflictError, ForbiddenError, NotFoundError
 
 MAX_PAGE_SIZE = 100
+MIN_SEARCH = 2  # shortest query that filters the feed
+
+
+def _search_clause(q: str):
+    """Case-insensitive substring match over a post's title, description, author
+    (login / name) and any of its comments. ``None`` if ``q`` is too short.
+
+    LIKE wildcards in the input are escaped so they match literally. Comments
+    are matched with a single EXISTS, so a post never appears twice.
+    """
+    q = q.strip()
+    if len(q) < MIN_SEARCH:
+        return None
+    esc = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    pattern = f"%{esc}%"
+    in_comment = exists().where(
+        Comment.post_id == Post.id, Comment.content.ilike(pattern, escape="\\")
+    )
+    by_author = exists().where(
+        User.id == Post.author_id,
+        or_(User.login.ilike(pattern, escape="\\"), User.display_name.ilike(pattern, escape="\\")),
+    )
+    return or_(
+        Post.title.ilike(pattern, escape="\\"),
+        Post.content.ilike(pattern, escape="\\"),
+        by_author,
+        in_comment,
+    )
 
 
 def _counts(viewer_id: int):
@@ -138,6 +166,7 @@ async def list_posts(
     viewer_id: int,
     categories: list[PostCategory] | None = None,
     post_type: PostType | None = None,
+    q: str | None = None,
     cursor: int | None = None,
     limit: int = 20,
 ) -> PostPage:
@@ -146,7 +175,8 @@ async def list_posts(
     Posts persist indefinitely (no time-based expiry); only the author can
     delete them. ``categories`` (any-of) and ``post_type`` narrow the feed —
     the Bacheca filter bar offers a multi-select of categories plus a Sondaggi
-    toggle (``post_type=sondaggio``).
+    toggle (``post_type=sondaggio``). ``q`` (2+ chars) searches title,
+    description, author and comments, and composes with the other filters.
     """
     limit = max(1, min(limit, MAX_PAGE_SIZE))
     stmt = _base_query(viewer_id).order_by(Post.id.desc()).limit(limit + 1)
@@ -154,6 +184,10 @@ async def list_posts(
         stmt = stmt.where(Post.category.in_(categories))
     if post_type is not None:
         stmt = stmt.where(Post.post_type == post_type)
+    if q:
+        clause = _search_clause(q)
+        if clause is not None:
+            stmt = stmt.where(clause)
     if cursor is not None:
         stmt = stmt.where(Post.id < cursor)
     rows = (await session.execute(stmt)).all()

@@ -96,6 +96,7 @@ export const api = {
     opts: {
       categories?: PostCategory[];
       postType?: PostType;
+      q?: string;
       cursor?: number | null;
       limit?: number;
     } = {},
@@ -104,6 +105,7 @@ export const api = {
     // Repeat ?category= for each selected category (any-of multi-select).
     opts.categories?.forEach((c) => p.append("category", c));
     if (opts.postType) p.set("post_type", opts.postType);
+    if (opts.q) p.set("q", opts.q);
     if (opts.cursor != null) p.set("cursor", String(opts.cursor));
     if (opts.limit != null) p.set("limit", String(opts.limit));
     const qs = p.toString();

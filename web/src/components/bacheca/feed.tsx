@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Plus } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 
 import { SectionHeading } from "@/components/chrome/section-heading";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryPills } from "./category-pills";
 import { PostCard } from "./post-card";
@@ -21,6 +22,7 @@ import { useI18n } from "@/providers/i18n-provider";
 import type { LikeState, PollOption, Post, PostCategory, RsvpState } from "@/lib/types";
 
 const PAGE_SIZE = 15;
+const MIN_SEARCH = 2; // shortest query the server filters on
 
 export function Feed() {
   const { user } = useAuth();
@@ -29,6 +31,9 @@ export function Feed() {
   // Empty set = no category filter ("Tutti"); any selected = show any-of.
   const [categories, setCategories] = React.useState<Set<PostCategory>>(new Set());
   const [sondaggiOnly, setSondaggiOnly] = React.useState(false);
+  // Search box (raw text) and the debounced, trimmed query actually sent.
+  const [search, setSearch] = React.useState("");
+  const [q, setQ] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const [cursor, setCursor] = React.useState<number | null>(null);
@@ -54,6 +59,28 @@ export function Feed() {
     [categories, sondaggiOnly],
   );
 
+  // Debounce: only 2+ chars filter; clearing the box restores the full feed.
+  React.useEffect(() => {
+    const trimmed = search.trim();
+    const next = trimmed.length >= MIN_SEARCH ? trimmed : "";
+    const id = setTimeout(() => setQ(next), next ? 300 : 0);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  // A NEW post is shown while searching only if its own text/author matches the
+  // query (a comment match can't be known from the post payload; it appears on
+  // the next reload). Already-listed posts stay put when edited.
+  const matchesQuery = React.useCallback(
+    (p: Post) => {
+      if (!q) return true;
+      const needle = q.toLowerCase();
+      return [p.title, p.content, p.author.login, p.author.display_name].some((f) =>
+        (f ?? "").toLowerCase().includes(needle),
+      );
+    },
+    [q],
+  );
+
   const toggleCategory = React.useCallback((c: PostCategory) => {
     setCategories((prev) => {
       const next = new Set(prev);
@@ -70,6 +97,7 @@ export function Feed() {
       const page = await api.listPosts({
         categories: categories.size ? [...categories] : undefined,
         postType: sondaggiOnly ? "sondaggio" : undefined,
+        q: q || undefined,
         limit: PAGE_SIZE,
       });
       setPosts(page.items);
@@ -80,7 +108,7 @@ export function Feed() {
     } finally {
       setLoading(false);
     }
-  }, [categories, sondaggiOnly, t]);
+  }, [categories, sondaggiOnly, q, t]);
 
   React.useEffect(() => {
     void load();
@@ -93,6 +121,7 @@ export function Feed() {
       const page = await api.listPosts({
         categories: categories.size ? [...categories] : undefined,
         postType: sondaggiOnly ? "sondaggio" : undefined,
+        q: q || undefined,
         cursor,
         limit: PAGE_SIZE,
       });
@@ -107,7 +136,7 @@ export function Feed() {
     } finally {
       setLoadingMore(false);
     }
-  }, [loading, loadingMore, hasMore, cursor, categories, sondaggiOnly]);
+  }, [loading, loadingMore, hasMore, cursor, categories, sondaggiOnly, q]);
 
   // Infinite scroll: a sentinel near the bottom triggers loading older posts.
   const sentinelRef = React.useRef<HTMLDivElement | null>(null);
@@ -136,7 +165,7 @@ export function Feed() {
         const incoming = event.data;
         setPosts((prev) => {
           if (prev.some((p) => p.id === incoming.id)) return prev; // de-dupe own echo
-          if (!matchesFilter(incoming)) return prev;
+          if (!matchesFilter(incoming) || !matchesQuery(incoming)) return prev;
           return [{ ...incoming, is_mine: incoming.author.id === myId }, ...prev];
         });
         break;
@@ -252,7 +281,7 @@ export function Feed() {
     } else {
       const created = await api.createPost(body);
       // De-dupe: the WebSocket "post.created" echo may already have added it.
-      if (matchesFilter(created)) {
+      if (matchesFilter(created) && matchesQuery(created)) {
         setPosts((prev) => (prev.some((p) => p.id === created.id) ? prev : [created, ...prev]));
       }
     }
@@ -283,6 +312,32 @@ export function Feed() {
           >
             <Plus className="h-4 w-4" /> {t("bacheca.newMessage")}
           </Button>
+        </div>
+
+        <div className="relative mb-3">
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]"
+            aria-hidden
+          />
+          <Input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("bacheca.searchPlaceholder")}
+            aria-label={t("bacheca.searchPlaceholder")}
+            maxLength={64}
+            className="pl-8 pr-8"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label={t("bacheca.searchClear")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text)]"
+            >
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+          )}
         </div>
 
         <div className="mb-5">
@@ -323,9 +378,11 @@ export function Feed() {
           </div>
         ) : posts.length === 0 ? (
           <div className="window retro-shadow p-8 text-center">
-            <p className="font-display text-lg">{t("bacheca.emptyTitle")}</p>
+            <p className="font-display text-lg">
+              {q ? t("bacheca.noResultsTitle") : t("bacheca.emptyTitle")}
+            </p>
             <p className="mt-1 font-mono text-sm text-[var(--text-muted)]">
-              {t("bacheca.emptyHintPost")}
+              {q ? t("bacheca.noResultsHint") : t("bacheca.emptyHintPost")}
             </p>
           </div>
         ) : (

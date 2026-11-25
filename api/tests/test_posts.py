@@ -130,3 +130,61 @@ async def test_non_owner_cannot_delete_comment(client, users):
 
 async def test_missing_post_404(client):
     assert (await client.get("/posts/999999")).status_code == 404
+
+
+# --- search (?q=) over title, description, author and comments ----------------
+
+
+async def _ids(client, **params):
+    resp = await client.get("/posts", params=params)
+    assert resp.status_code == 200, resp.text
+    return [p["id"] for p in resp.json()["items"]]
+
+
+async def test_search_title_description_and_case_insensitive(client):
+    a = await _create_post(client, title="Peer Learning", content="boh")
+    b = await _create_post(client, title=None, content="Cerco un Compagno per la minishell")
+    await _create_post(client, title="altro", content="niente")
+    assert await _ids(client, q="peer learning") == [a["id"]]  # title, any case
+    assert await _ids(client, q="COMPAGNO") == [b["id"]]  # description
+
+
+async def test_search_by_author(client, users):
+    mine = await _create_post(client, content="post di alice")
+    client.auth_ctx.current = users["bob"]
+    theirs = await _create_post(client, content="post di bob")
+    assert await _ids(client, q="alice") == [mine["id"]]  # login
+    assert await _ids(client, q="Bob") == [theirs["id"]]  # display name
+
+
+async def test_search_in_comments_no_duplicates(client):
+    hit = await _create_post(client, content="niente di speciale")
+    other = await _create_post(client, content="altro")
+    for text in ("la parola magica", "ancora magica qui"):
+        r = await client.post(f"/posts/{hit['id']}/comments", json={"content": text})
+        assert r.status_code == 201
+    assert await _ids(client, q="magica") == [hit["id"]]  # once, despite 2 matching comments
+    assert other["id"] not in await _ids(client, q="magica")
+
+
+async def test_search_composes_with_filters_and_cursor(client):
+    s1 = await _create_post(client, content="minishell uno", category="studio")
+    await _create_post(client, content="minishell due", category="mercatino")
+    s3 = await _create_post(client, content="minishell tre", category="studio")
+    assert set(await _ids(client, q="minishell", category="studio")) == {s1["id"], s3["id"]}
+    page = (await client.get("/posts", params={"q": "minishell", "limit": 1})).json()
+    assert len(page["items"]) == 1 and page["next_cursor"] is not None
+    nxt = (
+        await client.get("/posts", params={"q": "minishell", "limit": 5, "cursor": page["next_cursor"]})
+    ).json()
+    assert len(nxt["items"]) == 2  # the remaining matches, none repeated
+    assert not {p["id"] for p in nxt["items"]} & {p["id"] for p in page["items"]}
+
+
+async def test_search_short_query_ignored_and_wildcards_literal(client):
+    await _create_post(client, content="uno")
+    await _create_post(client, content="due")
+    assert len(await _ids(client, q="u")) == 2  # 1 char → no filter
+    assert await _ids(client, q="%%") == []  # wildcards are literal
+    assert await _ids(client, q="_n") == []
+    assert (await client.get("/posts", params={"q": "x" * 65})).status_code == 422
