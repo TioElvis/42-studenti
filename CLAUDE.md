@@ -68,6 +68,13 @@ through memory only. Contributions are direct commits to `GITHUB_BRANCH`
 (no PRs); same path = update. Deleting files/folders and uploading to the
 archive are limited to `GITHUB_SPECIAL_USERS` (42 logins), enforced server-side.
 
+## Feature changelog (always)
+
+Whenever a new user-facing feature is added, changed or removed, also update
+BOTH `assets/archive/subject.en.txt` and `assets/archive/subject.it.txt` (the
+"what the app can do" overview): edit the matching section in each, keep them in
+sync, and do it in the same piece of work as the feature.
+
 ## Roadmap status
 
 - Step 1 La Bacheca: DONE. Step 2 Eventi (official 42 Roma events, cached): DONE.
