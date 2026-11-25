@@ -128,6 +128,13 @@ export interface EventItem {
   interest_count: number;
 }
 
+/** A student registered to an event, as reported live by the 42 API. */
+export interface EventAttendee {
+  login: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 export interface InterestState {
   interested: boolean;
   interest_count: number;

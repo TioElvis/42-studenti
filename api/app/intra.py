@@ -22,7 +22,7 @@ from intra42.exceptions import FortyTwoAPIError
 from intra42.exceptions import NotFoundError as IntraNotFound
 
 from .config import Settings
-from .schemas.event import EventOut
+from .schemas.event import EventAttendee, EventOut
 
 
 class EventsUnavailableError(Exception):
@@ -73,6 +73,11 @@ _FAR_FUTURE = datetime.max.replace(tzinfo=timezone.utc)
 
 # Cap the per-login profile cache so it can't grow without bound.
 _PROFILE_CACHE_MAX = 512
+
+# Attendee lists: 100 per page, at most 5 pages (500 names) per event.
+_ATTENDEES_PAGE = 100
+_ATTENDEES_MAX_PAGES = 5
+_ATTENDEE_CACHE_MAX = 64
 
 _COMMON_CORE_CURSUS_ID = 21
 _COMMON_CORE_SLUG = "42cursus"
@@ -221,6 +226,8 @@ class EventsProvider:
         # Per-login 42 profile cache (profiles change slowly).
         self._profile_cache: dict[str, tuple[float, IntraUserInfo]] = {}
         self._profile_lock = asyncio.Lock()
+        # Per-event attendee cache (registrations change slowly; one 42 call each).
+        self._attendee_cache: dict[int, tuple[float, list[EventAttendee]]] = {}
 
     def _credentials_present(self) -> bool:
         return bool(self._settings.forty_two_uid and self._settings.forty_two_secret)
@@ -295,6 +302,58 @@ class EventsProvider:
                 if isinstance(eid, int) and isinstance(euid, int):
                     out[eid] = euid
         return out
+
+    async def attendees(self, event_id: int) -> list[EventAttendee]:
+        """Everyone registered to ``event_id`` on 42 (names straight from 42).
+
+        Cached for ``events_cache_ttl`` seconds. Raises
+        :class:`EventsUnavailableError` if 42 is unreachable / unconfigured.
+        """
+        now = time.monotonic()
+        hit = self._attendee_cache.get(event_id)
+        if hit and now - hit[0] < self._settings.events_cache_ttl:
+            return hit[1]
+        if not self._credentials_present():
+            raise EventsUnavailableError("42 credentials not configured")
+        people: list[EventAttendee] = []
+        try:
+            async with AsyncClient(
+                self._settings.forty_two_uid, self._settings.forty_two_secret
+            ) as client:
+                for page in range(1, _ATTENDEES_MAX_PAGES + 1):
+                    resp = await client.request(
+                        "GET",
+                        f"/events/{event_id}/users",
+                        params={"page[size]": str(_ATTENDEES_PAGE), "page[number]": str(page)},
+                    )
+                    rows = resp.json()
+                    if not isinstance(rows, list):
+                        break
+                    for u in rows:
+                        login = u.get("login") if isinstance(u, dict) else None
+                        if not isinstance(login, str) or not login:
+                            continue
+                        image = u.get("image") or {}
+                        people.append(
+                            EventAttendee(
+                                login=login,
+                                display_name=u.get("displayname") or u.get("usual_full_name"),
+                                avatar_url=image.get("link") if isinstance(image, dict) else None,
+                            )
+                        )
+                    if len(rows) < _ATTENDEES_PAGE:
+                        break
+        except FortyTwoAPIError as exc:
+            raise EventsUnavailableError("Couldn't fetch attendees from 42") from exc
+        people.sort(key=lambda a: (a.display_name or a.login).lower())
+        if len(self._attendee_cache) >= _ATTENDEE_CACHE_MAX:
+            self._attendee_cache.pop(next(iter(self._attendee_cache)))
+        self._attendee_cache[event_id] = (now, people)
+        return people
+
+    def invalidate_attendees(self, event_id: int) -> None:
+        """Drop the cached list (used after a (un)registration made here)."""
+        self._attendee_cache.pop(event_id, None)
 
     async def subscriber_count(self, event_id: int) -> int | None:
         """Fresh ``nbr_subscribers`` for one event from 42, or None on failure.

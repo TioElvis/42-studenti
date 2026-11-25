@@ -6,6 +6,7 @@ import { Calendar, Clock, MapPin, Users, Tag, Star } from "lucide-react";
 
 import { DialogContent } from "@/components/ui/dialog";
 import { EventScopeBadge } from "./event-scope-badge";
+import { EventAttendees } from "./event-attendees";
 import { Button } from "@/components/ui/button";
 import { Linkify } from "@/components/ui/linkify";
 import { cn } from "@/lib/utils";
@@ -112,6 +113,8 @@ export function EventDetailModal({
                 </p>
               </div>
             )}
+
+            <EventAttendees eventId={event.id} refreshKey={count} />
 
             <div className="flex flex-col gap-1.5">
               <Button

@@ -13,6 +13,7 @@ import type {
   ContentFile,
   ContentList,
   ContentSection,
+  EventAttendee,
   ContributeResult,
   GithubStatus,
   NotificationFilter,
@@ -147,6 +148,8 @@ export const api = {
     request<void>(`/comments/${commentId}`, { method: "DELETE" }),
 
   listEvents: () => request<EventItem[]>("/events"),
+  eventAttendees: (eventId: number) =>
+    request<EventAttendee[]>(`/events/${eventId}/attendees`),
   toggleEventInterest: (eventId: number) =>
     request<InterestState>(`/events/${eventId}/interest`, { method: "POST" }),
 

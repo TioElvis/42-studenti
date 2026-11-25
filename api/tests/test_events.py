@@ -119,3 +119,66 @@ async def test_events_internal_external_flag(client):
     assert internal_by_id == {10: True, 11: False, 12: False, 13: True}
 
     deps._events_provider = None
+
+
+# --- GET /events/{id}/attendees: names come straight from the 42 API ----------
+
+_TOKEN_URL = "https://api.intra.42.fr/oauth/token"
+_CAMPUS_EVENTS = "https://api.intra.42.fr/v2/campus/61/events"
+
+
+def _mock_feed(mock):
+    mock.post(_TOKEN_URL).mock(
+        return_value=Response(200, json={"access_token": "app-token", "expires_in": 7200})
+    )
+    mock.route(method="GET", url__startswith=_CAMPUS_EVENTS).mock(
+        return_value=Response(200, json=EVENTS_PAYLOAD)
+    )
+
+
+async def test_attendees_listed_from_42(client):
+    deps._events_provider = None
+    with respx.mock(assert_all_called=False) as mock:
+        _mock_feed(mock)
+        users = mock.route(
+            method="GET", url__startswith="https://api.intra.42.fr/v2/events/1/users"
+        ).mock(
+            return_value=Response(
+                200,
+                json=[
+                    {"login": "zed", "usual_full_name": "Zed Z", "image": {"link": "https://x/z.jpg"}},
+                    {"login": "amy", "displayname": "Amy Adams", "image": None},
+                    {"id": 5},  # no login: skipped
+                ],
+            )
+        )
+        resp = await client.get("/events/1/attendees")
+        again = await client.get("/events/1/attendees")  # served from the cache
+    assert resp.status_code == 200
+    assert resp.json() == [
+        {"login": "amy", "display_name": "Amy Adams", "avatar_url": None},
+        {"login": "zed", "display_name": "Zed Z", "avatar_url": "https://x/z.jpg"},
+    ]
+    assert again.json() == resp.json() and users.call_count == 1
+    deps._events_provider = None
+
+
+async def test_attendees_unknown_event_404(client):
+    deps._events_provider = None
+    with respx.mock(assert_all_called=False) as mock:
+        _mock_feed(mock)
+        resp = await client.get("/events/999/attendees")
+    assert resp.status_code == 404
+    deps._events_provider = None
+
+
+async def test_attendees_42_failure_503(client):
+    deps._events_provider = None
+    with respx.mock(assert_all_called=False) as mock:
+        _mock_feed(mock)
+        mock.route(
+            method="GET", url__startswith="https://api.intra.42.fr/v2/events/1/users"
+        ).mock(return_value=Response(403, json={}))
+        resp = await client.get("/events/1/attendees")
+    assert resp.status_code == 503
+    deps._events_provider = None

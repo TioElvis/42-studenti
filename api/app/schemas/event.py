@@ -28,3 +28,11 @@ class EventOut(BaseModel):
 class InterestState(BaseModel):
     interested: bool
     interest_count: int
+
+
+class EventAttendee(BaseModel):
+    """A student registered to an event on 42 (read live from the 42 API)."""
+
+    login: str
+    display_name: str | None = None
+    avatar_url: str | None = None

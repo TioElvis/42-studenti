@@ -18,7 +18,7 @@ from ..deps import CurrentUser, EventsProviderDep, SessionDep, SettingsDep
 from ..intra import EventsUnavailableError
 from ..intra_user import IntraApiError, IntraAuthRequired
 from ..realtime import manager
-from ..schemas.event import EventOut, InterestState
+from ..schemas.event import EventAttendee, EventOut, InterestState
 from ..services import events as events_service
 
 router = APIRouter(prefix="/events", tags=["events"])
@@ -65,6 +65,29 @@ async def list_events(
     ]
 
 
+@router.get("/{event_id}/attendees", response_model=list[EventAttendee])
+async def list_attendees(
+    event_id: int,
+    provider: EventsProviderDep,
+    settings: SettingsDep,
+    user: CurrentUser,
+    response: Response,
+) -> list[EventAttendee]:
+    """Who is registered to an upcoming event, with names read live from 42."""
+    base = await _upcoming_or_503(provider)
+    if not any(e.id == event_id for e in base):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento non trovato.")
+    try:
+        people = await provider.attendees(event_id)
+    except EventsUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Nun riesco a legge chi è iscritto da 42, riprova tra poco.",
+        ) from exc
+    response.headers["Cache-Control"] = f"private, max-age={settings.http_cache_seconds}"
+    return people
+
+
 @router.post("/{event_id}/interest", response_model=InterestState)
 async def toggle_interest(
     event_id: int,
@@ -96,6 +119,7 @@ async def toggle_interest(
             detail=str(exc) or "42 non ha accettato l'operazione.",
         ) from exc
 
+    provider.invalidate_attendees(event_id)  # the list just changed
     # Count = 42's fresh nbr_subscribers; fall back to our local mirror if 42 is down.
     count = await provider.subscriber_count(event_id)
     if count is None:
