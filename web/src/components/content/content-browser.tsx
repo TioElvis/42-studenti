@@ -375,13 +375,6 @@ export function ContentBrowser({
                       <Trash2 className="h-4 w-4" /> {t("common.delete")}
                     </Button>
                   )}
-                  {selected.github_url && (
-                    <Button asChild size="sm" variant="outline">
-                      <a href={selected.github_url} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4" /> {t("content.openGithub")}
-                      </a>
-                    </Button>
-                  )}
                   {selected.kind !== "text" && (
                     <Button asChild size="sm" variant="outline">
                       <a
