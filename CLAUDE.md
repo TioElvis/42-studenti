@@ -53,6 +53,8 @@ Never hand-edit `api/vendor/42api/src/intra42/_sync/` (generated). Edit
 - **Auth.** 42 OAuth2 code flow in `routers/auth.py`. The 42 token is used once
   for `/me` and discarded; we issue our own HS256 JWT in an httpOnly cookie.
   The frontend gates on `GET /me` (cookie is on the API origin).
+  The API may be asleep (free hosting): on a network error, 502/503/504 or a
+  slow `/me` the app shows `WakeScreen` and polls `GET /health` until it answers.
 - **Secrets** only from env (`app/config.py`). Never hardcode; never commit `.env`.
 - **Themes.** `classic`, `hacker`, `classic-modern`, `hacker-modern` share layout and
   semantic CSS token *names*; only values swap under `[data-theme=...]` in

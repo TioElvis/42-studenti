@@ -24,6 +24,14 @@ const it = {
     confirmBar: "CONFERMA.EXE",
   },
   boot: { connecting: "Connessione ar cluster" },
+  wake: {
+    title: "Er server se sta svejando…",
+    body: "Sto riaccenneno er cluster, n'attimo e se parte",
+    elapsed: "Attesa: {time}",
+    explain:
+      "Er server gira su un hosting gratuito che se mette a dormì quanno nun lo usa nessuno: er primo risveglio pò durà fino a un minuto. Nun ricarica, fa tutto da solo.",
+    slow: "Ce sta mettenno più der solito.",
+  },
   nav: {
     section: "Sezione",
     bacheca: "Bacheca",
@@ -479,6 +487,14 @@ const en: typeof it = {
     confirmBar: "CONFIRM.EXE",
   },
   boot: { connecting: "Connecting to the cluster" },
+  wake: {
+    title: "The server is waking up…",
+    body: "Booting the cluster back up, just a moment",
+    elapsed: "Waiting: {time}",
+    explain:
+      "The server runs on free hosting that goes to sleep when nobody uses it: the first wake-up can take up to a minute. No need to reload, it continues on its own.",
+    slow: "It's taking longer than usual.",
+  },
   nav: {
     section: "Section",
     bacheca: "Board",

@@ -5,6 +5,7 @@ import * as React from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { useI18n } from "@/providers/i18n-provider";
 import { BootScreen } from "@/components/chrome/boot-screen";
+import { WakeScreen } from "@/components/chrome/wake-screen";
 import { LoginGate } from "@/components/login-gate";
 import { TopRibbon } from "@/components/chrome/top-ribbon";
 import { Brand } from "@/components/chrome/brand";
@@ -24,6 +25,11 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
 
   if (status === "loading") {
     return <BootScreen />;
+  }
+
+  // The API is asleep / unreachable: a dedicated page until it answers.
+  if (status === "waking") {
+    return <WakeScreen />;
   }
 
   if (status === "anonymous") {

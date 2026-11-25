@@ -89,7 +89,21 @@ export function githubLinkUrl(): string {
 }
 
 export const api = {
-  me: () => request<UserMe>("/me"),
+  // A hung connection to a sleeping API must not block forever: abort after 25 s
+  // (the caller then treats it like "API waking up").
+  me: () => request<UserMe>("/me", { signal: AbortSignal.timeout(25_000) }),
+  /** Cheap liveness probe: true once the API answers (used while it wakes up). */
+  health: async (): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE}/health`, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(8_000),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
   logout: () => request<{ detail: string }>("/auth/logout", { method: "POST" }),
 
   listPosts: (
