@@ -1,11 +1,13 @@
 /* 42 Studenti — unified design system with swappable themes.
  *
- * Classic & Hacker (90s retro). Both themes share the SAME layout, window chrome and semantic token NAMES; switching
- * theme only remaps these CSS custom properties (see the [data-theme="..."]
+ * Classic & Hacker (90s retro) + Classic Modern & Hacker Modern (soft, rounded).
+ * All themes share the SAME layout, window chrome and semantic token NAMES;
+ * switching theme only remaps these CSS custom properties (see the [data-theme="..."]
  * blocks) — never the structure. Palettes are lifted verbatim from the
  * assets/*.html reference files.
  */
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
@@ -93,6 +95,86 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * THEME C — Classic Modern. From assets/classic-modern.html. Same travertine /
+ * crimson palette as Classic with translucent borders, Plus Jakarta Sans.
+ * ------------------------------------------------------------------------- */
+[data-theme="classic-modern"] {
+  --bg: #f6f2e9;
+  --surface: #fcfbf7;
+  --surface-2: #efece4;
+  --surface-sunken: #efece4;
+  --text: #23211e;
+  --text-muted: #6e695f;
+  --primary: #9b2928;
+  --primary-hover: #7d1e1d;
+  --primary-fg: #fcfbf7;
+  --border: rgba(43, 41, 39, 0.24);
+  --border-subtle: rgba(43, 41, 39, 0.12);
+  --ring: #9b2928;
+  --status-online: #2e8b57;
+  --shadow: rgba(35, 33, 30, 0.14);
+  --ribbon-bg: #9b2928;
+  --ribbon-fg: #fcfbf7;
+
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --body-font: var(--font-sans);
+  --grid-color: transparent;
+  --grid-size: 24px;
+  --scanline-opacity: 0;
+  --glow: 0 0 0 3px rgba(46, 139, 87, 0.18); /* soft ring on the status dot */
+
+  --cat-studio-bg: #dce8d0;      --cat-studio-fg: #2f4a22;
+  --cat-cerco_team-bg: #f5d6d6;  --cat-cerco_team-fg: #7a2323;
+  --cat-evento_casuale-bg: #f7e6b0; --cat-evento_casuale-fg: #5c4510;
+  --cat-vita_romana-bg: #d6e4f5; --cat-vita_romana-fg: #234a7a;
+  --cat-mercatino-bg: #e6dcf5;   --cat-mercatino-fg: #4a237a;
+  --cat-off_topic-bg: #efe7d8;   --cat-off_topic-fg: #6e5a2e;
+  --cat-border: var(--border-subtle);
+}
+
+/* ---------------------------------------------------------------------------
+ * THEME D — Hacker Modern. From assets/hacker-modern.html. Obsidian canvas,
+ * phosphor-green + crimson glow, glassy surfaces, Inter + JetBrains Mono.
+ * ------------------------------------------------------------------------- */
+[data-theme="hacker-modern"] {
+  --bg: #090b0d;
+  --surface: #111518;
+  --surface-2: #181e22;
+  --surface-sunken: #090b0d;
+  --text: #edf2ef;
+  --text-muted: #84948e;
+  --primary: #e63946;
+  --primary-hover: #ff4757;
+  --primary-fg: #ffffff;
+  --border: rgba(255, 255, 255, 0.14);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --ring: #00ff88;
+  --status-online: #00ff88;
+  --shadow: #000000;
+  --ribbon-bg: rgba(17, 21, 24, 0.8);
+  --ribbon-fg: #84948e;
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Inter", system-ui, sans-serif;
+  --body-font: var(--font-sans);
+  --grid-color: rgba(255, 255, 255, 0.02);
+  --grid-size: 32px;
+  --scanline-opacity: 0;
+  --glow: 0 0 10px rgba(0, 255, 136, 0.7);
+
+  --cat-studio-bg: rgba(0, 255, 136, 0.1);   --cat-studio-fg: #00ff88;
+  --cat-cerco_team-bg: rgba(0, 229, 255, 0.1); --cat-cerco_team-fg: #00e5ff;
+  --cat-evento_casuale-bg: rgba(255, 183, 3, 0.1); --cat-evento_casuale-fg: #ffb703;
+  --cat-vita_romana-bg: rgba(217, 70, 239, 0.12); --cat-vita_romana-fg: #e879f9;
+  --cat-mercatino-bg: rgba(230, 57, 70, 0.16); --cat-mercatino-fg: #ff6b74;
+  --cat-off_topic-bg: rgba(132, 148, 142, 0.14); --cat-off_topic-fg: #a9bcb4;
+  --cat-border: var(--border-subtle);
+}
+
+/* ---------------------------------------------------------------------------
  * Structural tokens — geometry, elevation and typography. Retro look:
  * 0px corners + hard offset shadows + diagonal lift. Components read these.
  * ------------------------------------------------------------------------- */
@@ -119,6 +201,54 @@
   --notice-bg: var(--cat-evento_casuale-bg);
   --notice-fg: var(--cat-evento_casuale-fg);
   --notice-border: var(--border);
+}
+
+/* Modern family: rounded corners, soft diffused shadows, vertical lift. */
+[data-theme="classic-modern"] {
+  --radius-card: 20px;
+  --radius-inner: 16px;
+  --radius-button: 10px;
+  --radius-input: 10px;
+  --radius-pill: 999px;
+  --radius-avatar: 999px;
+  --elev-sm: 0 2px 8px rgba(35, 33, 30, 0.04);
+  --elev-md: 0 12px 28px -6px rgba(35, 33, 30, 0.08), 0 4px 10px -2px rgba(35, 33, 30, 0.04);
+  --elev-lg: 0 20px 40px -10px rgba(35, 33, 30, 0.12), 0 6px 12px -4px rgba(35, 33, 30, 0.06);
+  --elev-lift: 0 12px 28px -6px rgba(35, 33, 30, 0.12), 0 4px 10px -2px rgba(35, 33, 30, 0.06);
+  --lift-x: 0px;
+  --lift-y: -4px;
+  --body-gradient: radial-gradient(circle at 50% 0%, rgba(155, 41, 40, 0.04) 0%, transparent 60%);
+  --tracking: -0.01em;
+  --tracking-tight: -0.02em;
+  --bar-weight: 700;
+  --font-ui: var(--font-sans);
+  --notice-bg: linear-gradient(180deg, #f7e6b0 0%, #fcfbf7 100%);
+  --notice-fg: #5c4510;
+  --notice-border: rgba(92, 69, 16, 0.2);
+}
+
+[data-theme="hacker-modern"] {
+  --radius-card: 20px;
+  --radius-inner: 16px;
+  --radius-button: 10px;
+  --radius-input: 10px;
+  --radius-pill: 999px;
+  --radius-avatar: 14px;
+  --elev-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --elev-md: 0 20px 50px rgba(0, 0, 0, 0.55);
+  --elev-lg: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 24px -6px rgba(0, 255, 136, 0.16);
+  --elev-lift: 0 14px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 136, 0.08);
+  --lift-x: 0px;
+  --lift-y: -4px;
+  /* One layer only (body-image sizes are positional): green glow at the top. */
+  --body-gradient: radial-gradient(ellipse at 50% -10%, rgba(0, 255, 136, 0.09) 0%, transparent 55%);
+  --tracking: -0.01em;
+  --tracking-tight: -0.02em;
+  --bar-weight: 700;
+  --font-ui: var(--font-sans);
+  --notice-bg: linear-gradient(180deg, rgba(255, 183, 3, 0.1) 0%, rgba(17, 21, 24, 0.95) 100%);
+  --notice-fg: #ffb703;
+  --notice-border: rgba(255, 183, 3, 0.25);
 }
 
 /* ---------------------------------------------------------------------------
@@ -266,7 +396,8 @@ button:disabled {
   color: var(--primary);
   font-family: var(--font-display);
 }
-[data-theme="hacker"] .cursor-blink { color: var(--status-online); }
+[data-theme="hacker"] .cursor-blink,
+[data-theme="hacker-modern"] .cursor-blink { color: var(--status-online); }
 
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(14px); }

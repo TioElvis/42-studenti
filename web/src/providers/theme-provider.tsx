@@ -2,10 +2,10 @@
 
 import * as React from "react";
 
-export type Theme = "classic" | "hacker";
+export type Theme = "classic" | "hacker" | "classic-modern" | "hacker-modern";
 
 /** All supported themes, in cycle order. */
-export const THEMES: Theme[] = ["classic", "hacker"];
+export const THEMES: Theme[] = ["classic", "hacker", "classic-modern", "hacker-modern"];
 
 const STORAGE_KEY = "42roma.theme";
 const DEFAULT_THEME: Theme = "classic";

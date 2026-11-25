@@ -30,6 +30,18 @@ const OPTIONS: ThemeOption[] = [
     subKey: "settings.hackerSub",
     swatches: ["#0b0d0e", "#00ff88", "#e63946", "#00e5ff", "#ffb703"],
   },
+  {
+    id: "classic-modern",
+    name: "Classico Moderno",
+    subKey: "settings.classicModernSub",
+    swatches: ["#f6f2e9", "#9b2928", "#dce8d0", "#f7e6b0", "#23211e"],
+  },
+  {
+    id: "hacker-modern",
+    name: "SPQR Hacker Moderno",
+    subKey: "settings.hackerModernSub",
+    swatches: ["#090b0d", "#00ff88", "#e63946", "#00e5ff", "#ffb703"],
+  },
 ];
 
 export function SettingsModal({ compact = false }: { compact?: boolean }) {
