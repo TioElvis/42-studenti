@@ -28,6 +28,16 @@ EVENTS_PAYLOAD = [
         "begin_at": "2000-01-01T10:00:00.000Z",
         "end_at": "2000-01-01T12:00:00.000Z",
     },
+    {
+        # Already started but still running (e.g. a pinned news post): hidden.
+        "id": 3,
+        "name": "Post in evidenza",
+        "description": "lungo",
+        "location": "Online",
+        "kind": "event",
+        "begin_at": "2000-01-01T10:00:00.000Z",
+        "end_at": "2999-01-01T12:00:00.000Z",
+    },
 ]
 
 
@@ -51,7 +61,7 @@ async def test_events_feed_returns_only_upcoming(client):
 
     assert resp.status_code == 200
     data = resp.json()
-    # Only the future event survives the upcoming filter.
+    # Only events that haven't started survive (past and already-started are hidden).
     assert [e["id"] for e in data] == [1]
     assert data[0]["name"] == "Hackathon Romano"
     assert data[0]["interested"] is False

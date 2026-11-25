@@ -260,10 +260,17 @@ class EventsProvider:
             raise EventsUnavailableError("42 API request failed") from exc
 
         now_ts = time.time()
+        # Only events that haven't started yet: once the start time has passed
+        # the event is hidden (this also drops long-running pinned/news posts).
+        # Undated events fall back to the end date.
         upcoming = [
             _to_out(e)
             for e in raw
-            if e.end_at is None or e.end_at.timestamp() >= now_ts
+            if (
+                e.begin_at.timestamp() >= now_ts
+                if e.begin_at is not None
+                else (e.end_at is None or e.end_at.timestamp() >= now_ts)
+            )
         ]
         # Undated events sort last; the sentinel avoids comparing None to None
         # (a TypeError) when two or more events have no begin_at.
