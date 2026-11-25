@@ -23,7 +23,9 @@ class FixedWindowRateLimiter:
         return request.client.host if request.client else "unknown"
 
     def check(self, request: Request) -> None:
-        key = self._client_key(request)
+        self.check_key(self._client_key(request))
+
+    def check_key(self, key: str) -> None:
         now = time.monotonic()
         window_start = now - self._window
         hits = [t for t in self._hits[key] if t >= window_start]
@@ -54,3 +56,5 @@ def message_rate_limiter(request: Request) -> None:
 
 _AUTH_LIMITER = FixedWindowRateLimiter(max_requests=20, window_seconds=60.0)
 _MESSAGE_LIMITER = FixedWindowRateLimiter(max_requests=5, window_seconds=60.0)
+# Uploads to Materiale/Archivio: 20 commits / 10 minutes / user.
+upload_limiter = FixedWindowRateLimiter(max_requests=20, window_seconds=600.0)

@@ -20,9 +20,10 @@ from fastapi.responses import RedirectResponse
 
 from .. import github_user
 from ..deps import CurrentUser, SessionDep, SettingsDep
-from ..ratelimit import auth_rate_limiter
+from ..ratelimit import auth_rate_limiter, upload_limiter
 from ..schemas.github import ContributeIn, ContributeOut, DeleteIn, DeleteOut, GithubStatus
 from ..services import content as content_service
+from ..services import upload_guard
 from ..services.exceptions import NotFoundError
 
 logger = logging.getLogger("app.github")
@@ -118,6 +119,7 @@ async def contribute(
     if not settings.github_contrib_configured:
         raise HTTPException(status_code=503, detail="Contributi GitHub non disponibili.")
 
+    upload_limiter.check_key(f"user:{user.id}")  # 20 contributions / 10 min / student
     if not content_service.section_allowed(data.section):
         raise HTTPException(status_code=404, detail="Sezione non valida.")
     # The archive section is restricted to the special users (42 logins).
@@ -157,6 +159,12 @@ async def contribute(
         content_b64 = base64.b64encode(raw).decode("ascii")
     if not data.create_folder and len(raw) > _MAX_CONTENT_BYTES:
         raise HTTPException(status_code=413, detail="File troppo grande (max 5 MiB).")
+    if not data.create_folder:
+        # Safety checks before anything is committed: name, extension, real content.
+        try:
+            upload_guard.validate_upload(rel, raw)
+        except upload_guard.UploadRejected as exc:
+            raise HTTPException(status_code=exc.status, detail=exc.detail) from exc
 
     message = (data.message or "").strip() or None  # default Add/Update set on commit
     try:
