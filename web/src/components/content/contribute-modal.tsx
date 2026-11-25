@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { ExternalLink, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 
 import { DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -179,11 +179,6 @@ export function ContributeModal({
           <div className="flex flex-col gap-3" role="status">
             <p className="font-display text-lg">{t("contribute.successTitle")}</p>
             <p className="font-mono text-sm text-[var(--text-muted)]">{successBody}</p>
-            <Button asChild>
-              <a href={result.url} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4" /> {t("contribute.viewFile")}
-              </a>
-            </Button>
             {isFolderIntent ? (
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 {t("contribute.close")}
