@@ -14,6 +14,7 @@ import type {
   ContentList,
   ContentSection,
   EventAttendee,
+  StudentPage,
   ContributeResult,
   GithubStatus,
   NotificationFilter,
@@ -168,6 +169,10 @@ export const api = {
   getProfile: (login?: string) =>
     request<Profile>(login ? `/profile/${encodeURIComponent(login)}` : "/profile"),
 
+  studentsPage: (q: string, page: number, pageSize = 20) =>
+    request<StudentPage>(
+      `/students/page?q=${encodeURIComponent(q)}&page=${page}&page_size=${pageSize}`,
+    ),
   searchStudents: (q: string) =>
     request<UserPublic[]>(`/students?q=${encodeURIComponent(q)}`),
 

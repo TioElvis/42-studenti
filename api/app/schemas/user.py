@@ -22,3 +22,12 @@ class UserMe(UserPublic):
 
     email: str | None = None
     intra_id: int
+
+
+class StudentPage(BaseModel):
+    """One page of the Studenti directory."""
+
+    items: list[UserPublic]
+    total: int
+    page: int  # 1-based, clamped to the last page
+    pages: int  # at least 1

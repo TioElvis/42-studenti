@@ -135,6 +135,14 @@ export interface EventAttendee {
   avatar_url: string | null;
 }
 
+/** One page of the Studenti directory. */
+export interface StudentPage {
+  items: UserPublic[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
 export interface InterestState {
   interested: boolean;
   interest_count: number;
