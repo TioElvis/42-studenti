@@ -193,3 +193,151 @@ async def contribute_server(
             message=message,
             author=author,
         )
+
+
+# --- deletion (special users only; enforced by the router) -------------------
+
+
+def _author_of(login: str, name: str | None) -> dict[str, str]:
+    return {"name": name or login, "email": f"{login}@users.noreply.github.com"}
+
+
+async def _delete_file(
+    client: httpx.AsyncClient,
+    *,
+    upstream: str,
+    base: str,
+    section: str,
+    rel_path: str,
+    message: str | None,
+    author: dict[str, str] | None,
+) -> str:
+    """Delete one file via the Contents API (needs its blob sha). Returns the
+    commit URL. Raises ``FileNotFoundError`` if it doesn't exist."""
+    full_path = f"assets/{section}/{rel_path}"
+    existing = await client.get(f"/repos/{upstream}/contents/{full_path}", params={"ref": base})
+    if existing.status_code in (401, 403):
+        raise GithubAuthRequired("No write access to the repo")
+    body = existing.json() if existing.status_code == 200 else None
+    if not isinstance(body, dict) or not body.get("sha"):
+        raise FileNotFoundError(rel_path)
+    payload: dict[str, object] = {
+        "message": message or f"Delete {section}/{rel_path}",
+        "sha": body["sha"],
+        "branch": base,
+    }
+    if author:
+        payload["author"] = author
+        payload["committer"] = author
+    resp = await client.request("DELETE", f"/repos/{upstream}/contents/{full_path}", json=payload)
+    if resp.status_code in (401, 403):
+        raise GithubAuthRequired("Serve accesso in scrittura al repository")
+    if resp.status_code != 200:
+        raise GithubApiError("Couldn't delete the file")
+    commit = (resp.json().get("commit") or {}) if resp.content else {}
+    return commit.get("html_url") or f"https://github.com/{upstream}/commits/{base}"
+
+
+async def _delete_folder(
+    client: httpx.AsyncClient,
+    *,
+    upstream: str,
+    base: str,
+    section: str,
+    rel_path: str,
+    message: str | None,
+    author: dict[str, str] | None,
+) -> str:
+    """Delete a whole folder in ONE commit through the Git Data API: build a
+    tree that nulls every blob under the prefix. Metadata only — no file bytes
+    are downloaded. Raises ``FileNotFoundError`` if the folder is empty/absent."""
+    prefix = f"assets/{section}/{rel_path}/"
+
+    def _auth(resp: httpx.Response) -> None:
+        if resp.status_code in (401, 403):
+            raise GithubAuthRequired("No write access to the repo")
+
+    ref = await client.get(f"/repos/{upstream}/git/ref/heads/{base}")
+    _auth(ref)
+    if ref.status_code != 200:
+        raise GithubApiError("Couldn't read the base branch")
+    head_sha = ref.json().get("object", {}).get("sha")
+
+    commit = await client.get(f"/repos/{upstream}/git/commits/{head_sha}")
+    _auth(commit)
+    if commit.status_code != 200:
+        raise GithubApiError("Couldn't read the base commit")
+    base_tree = commit.json().get("tree", {}).get("sha")
+
+    tree = await client.get(f"/repos/{upstream}/git/trees/{base_tree}", params={"recursive": "1"})
+    _auth(tree)
+    if tree.status_code != 200:
+        raise GithubApiError("Couldn't read the repository tree")
+    data = tree.json()
+    if data.get("truncated"):
+        raise GithubApiError("Repository too large to delete a folder safely")
+    entries = [
+        {"path": it["path"], "mode": "100644", "type": "blob", "sha": None}
+        for it in data.get("tree") or []
+        if it.get("type") == "blob" and str(it.get("path", "")).startswith(prefix)
+    ]
+    if not entries:
+        raise FileNotFoundError(rel_path)
+
+    new_tree = await client.post(
+        f"/repos/{upstream}/git/trees", json={"base_tree": base_tree, "tree": entries}
+    )
+    _auth(new_tree)
+    if new_tree.status_code not in (200, 201):
+        raise GithubApiError("Couldn't build the new tree")
+
+    payload: dict[str, object] = {
+        "message": message or f"Delete folder {section}/{rel_path}",
+        "tree": new_tree.json().get("sha"),
+        "parents": [head_sha],
+    }
+    if author:
+        payload["author"] = author
+        payload["committer"] = author
+    new_commit = await client.post(f"/repos/{upstream}/git/commits", json=payload)
+    _auth(new_commit)
+    if new_commit.status_code not in (200, 201):
+        raise GithubApiError("Couldn't create the commit")
+    new_sha = new_commit.json().get("sha")
+
+    upd = await client.patch(f"/repos/{upstream}/git/refs/heads/{base}", json={"sha": new_sha})
+    _auth(upd)
+    if upd.status_code != 200:
+        raise GithubApiError("Couldn't update the branch")
+    return new_commit.json().get("html_url") or f"https://github.com/{upstream}/commit/{new_sha}"
+
+
+async def delete_path(
+    *,
+    settings: Settings,
+    token: str | None,
+    section: str,
+    rel_path: str,
+    folder: bool,
+    message: str | None = None,
+    author_login: str | None = None,
+    author_name: str | None = None,
+) -> str:
+    """Delete a file or folder with the server token (when ``token`` is None and
+    server mode is on) or the student's own token. Returns the commit URL."""
+    server = token is None
+    bearer = settings.github_write_token if server else token
+    author = _author_of(author_login, author_name) if server and author_login else None
+    fn = _delete_folder if folder else _delete_file
+    async with httpx.AsyncClient(
+        base_url=_GITHUB_API, timeout=30.0, headers=_headers(bearer or "")
+    ) as client:
+        return await fn(
+            client,
+            upstream=settings.github_repo,
+            base=settings.github_branch,
+            section=section,
+            rel_path=rel_path,
+            message=message,
+            author=author,
+        )

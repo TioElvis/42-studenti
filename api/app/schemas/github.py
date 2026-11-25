@@ -12,7 +12,8 @@ class GithubStatus(BaseModel):
     server_mode: bool = False  # backend commits with its own token (no linking)
     linked: bool
     username: str | None = None
-    can_archive: bool = False  # may this student contribute to the archive section?
+    can_archive: bool = False  # special user: may upload to the archive section
+    can_delete: bool = False  # special user: may delete files/folders
 
 
 class ContributeIn(BaseModel):
@@ -29,3 +30,15 @@ class ContributeIn(BaseModel):
 class ContributeOut(BaseModel):
     url: str
     action: Literal["created", "updated"]
+
+
+class DeleteIn(BaseModel):
+    section: Literal["material", "archive"]
+    path: str = Field(min_length=1, max_length=512)  # file or folder path
+    folder: bool = False  # True → delete the whole folder in one commit
+    message: str | None = Field(default=None, max_length=200)
+
+
+class DeleteOut(BaseModel):
+    url: str
+    action: Literal["deleted"] = "deleted"

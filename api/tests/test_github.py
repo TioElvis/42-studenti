@@ -149,14 +149,15 @@ def test_pr_flow_removed():
     assert "mode" not in ContributeIn.model_fields and "title" not in ContributeIn.model_fields
 
 
-def test_archive_allow_list():
+def test_special_users_list():
     from app.config import Settings
 
-    s = Settings(GITHUB_ARCHIVE_ALLOW="alice, Bob")
-    assert s.can_contribute_archive("alice") is True
-    assert s.can_contribute_archive("BOB") is True
-    assert s.can_contribute_archive("carol") is False
-    assert Settings(GITHUB_ARCHIVE_ALLOW="").can_contribute_archive("alice") is False
+    s = Settings(GITHUB_SPECIAL_USERS="alice, Bob")
+    assert s.is_special_user("alice") is True
+    assert s.is_special_user("BOB") is True
+    assert s.is_special_user("carol") is False
+    assert Settings(GITHUB_SPECIAL_USERS="").is_special_user("alice") is False
+    assert not hasattr(s, "github_archive_allow")  # old variable is gone
 
 
 async def test_status_and_contribute_unconfigured(client):
@@ -224,3 +225,113 @@ async def test_contribute_endpoint_creates_folder_with_gitkeep(client):
     req = put.calls.last.request
     assert str(req.url).endswith("/contents/assets/material/exam02/ex03/.gitkeep")
     assert json.loads(req.content)["content"] == ""
+
+
+# --- POST /github/delete -------------------------------------------------------
+
+_API = "https://api.github.com/repos/TioElvis/42-studenti"
+
+
+def _special_app_settings(client, users="alice"):
+    from app.config import Settings, get_settings
+
+    s = Settings(
+        GITHUB_REPO="TioElvis/42-studenti", GITHUB_WRITE_TOKEN="ghs_tok", GITHUB_SPECIAL_USERS=users
+    )
+    client._transport.app.dependency_overrides[get_settings] = lambda: s
+
+
+async def test_status_exposes_can_delete(client):
+    _special_app_settings(client, users="alice")
+    assert (await client.get("/github/status")).json()["can_delete"] is True
+    _special_app_settings(client, users="bob")
+    assert (await client.get("/github/status")).json()["can_delete"] is False
+
+
+async def test_delete_forbidden_for_non_special_user(client):
+    _special_app_settings(client, users="bob")
+    with respx.mock(assert_all_called=False) as m:
+        any_call = m.route().mock(return_value=R(500))
+        r = await client.post("/github/delete", json={"section": "material", "path": "a.md"})
+    assert r.status_code == 403 and not any_call.called  # GitHub never touched
+
+
+async def test_delete_file_uses_sha_and_invalidates_cache(client):
+    from app.services import content as content_service
+
+    _special_app_settings(client)
+    content_service._gh_tree_cache["archive"] = (1e12, object())
+    with respx.mock(assert_all_called=False) as m:
+        m.get(url__startswith=f"{_API}/contents/").mock(return_value=R(200, json={"sha": "abc"}))
+        d = m.delete(url__startswith=f"{_API}/contents/").mock(
+            return_value=R(200, json={"commit": {"html_url": "https://github.com/x/commit/1"}})
+        )
+        r = await client.post(
+            "/github/delete", json={"section": "archive", "path": "exam02/ex03/notes.md"}
+        )
+    assert r.status_code == 200 and r.json() == {
+        "url": "https://github.com/x/commit/1",
+        "action": "deleted",
+    }
+    req = d.calls.last.request
+    assert str(req.url).endswith("/contents/assets/archive/exam02/ex03/notes.md")
+    body = json.loads(req.content)
+    assert body["sha"] == "abc" and body["branch"] == "main"
+    assert body["message"] == "Delete archive/exam02/ex03/notes.md"
+    assert "archive" not in content_service._gh_tree_cache
+
+
+async def test_delete_missing_file_404_and_bad_path_400(client):
+    _special_app_settings(client)
+    with respx.mock(assert_all_called=False) as m:
+        m.get(url__startswith=f"{_API}/contents/").mock(return_value=R(404, json={}))
+        r = await client.post("/github/delete", json={"section": "material", "path": "nope.md"})
+        assert r.status_code == 404
+    for bad in ["../x.md", "a\\b", "/a", "a/", "a//b"]:
+        r = await client.post("/github/delete", json={"section": "material", "path": bad})
+        assert r.status_code == 400
+
+
+async def test_delete_folder_is_one_commit_via_tree(client):
+    _special_app_settings(client)
+    tree = {
+        "tree": [
+            {"path": "assets/material/exam02/a.md", "type": "blob"},
+            {"path": "assets/material/exam02/ex03/.gitkeep", "type": "blob"},
+            {"path": "assets/material/exam02x/keep.md", "type": "blob"},  # sibling prefix
+            {"path": "assets/material/other.md", "type": "blob"},
+        ]
+    }
+    with respx.mock(assert_all_called=False) as m:
+        m.get(f"{_API}/git/ref/heads/main").mock(return_value=R(200, json={"object": {"sha": "h1"}}))
+        m.get(f"{_API}/git/commits/h1").mock(return_value=R(200, json={"tree": {"sha": "t1"}}))
+        m.get(url__startswith=f"{_API}/git/trees/t1").mock(return_value=R(200, json=tree))
+        nt = m.post(f"{_API}/git/trees").mock(return_value=R(201, json={"sha": "t2"}))
+        nc = m.post(f"{_API}/git/commits").mock(
+            return_value=R(201, json={"sha": "c2", "html_url": "https://github.com/x/commit/c2"})
+        )
+        ref = m.patch(f"{_API}/git/refs/heads/main").mock(return_value=R(200, json={}))
+        r = await client.post(
+            "/github/delete", json={"section": "material", "path": "exam02", "folder": True}
+        )
+    assert r.status_code == 200 and r.json()["url"].endswith("/commit/c2")
+    entries = json.loads(nt.calls.last.request.content)["tree"]
+    assert {e["path"] for e in entries} == {
+        "assets/material/exam02/a.md",
+        "assets/material/exam02/ex03/.gitkeep",
+    }  # exam02x/ and other.md untouched
+    assert all(e["sha"] is None for e in entries)
+    assert json.loads(nc.calls.last.request.content)["parents"] == ["h1"]
+    assert json.loads(ref.calls.last.request.content) == {"sha": "c2"}
+
+
+async def test_delete_empty_folder_404(client):
+    _special_app_settings(client)
+    with respx.mock(assert_all_called=False) as m:
+        m.get(f"{_API}/git/ref/heads/main").mock(return_value=R(200, json={"object": {"sha": "h1"}}))
+        m.get(f"{_API}/git/commits/h1").mock(return_value=R(200, json={"tree": {"sha": "t1"}}))
+        m.get(url__startswith=f"{_API}/git/trees/t1").mock(return_value=R(200, json={"tree": []}))
+        r = await client.post(
+            "/github/delete", json={"section": "material", "path": "ghost", "folder": True}
+        )
+    assert r.status_code == 404

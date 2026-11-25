@@ -65,7 +65,8 @@ Materiale / Archivio content lives only on GitHub (`assets/material|archive`).
 Never read, download, clone or mirror `assets/` content locally (agents, scripts,
 backend). The API lists via the Git Trees API (metadata) and proxies bytes
 through memory only. Contributions are direct commits to `GITHUB_BRANCH`
-(no PRs); same path = update.
+(no PRs); same path = update. Deleting files/folders and uploading to the
+archive are limited to `GITHUB_SPECIAL_USERS` (42 logins), enforced server-side.
 
 ## Roadmap status
 

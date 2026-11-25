@@ -191,6 +191,17 @@ export const api = {
 
   githubStatus: () => request<GithubStatus>("/github/status"),
   unlinkGithub: () => request<void>("/github/link", { method: "DELETE" }),
+  /** Delete a file, or a whole folder (one commit). Special users only. */
+  deleteContent: (body: {
+    section: ContentSection;
+    path: string;
+    folder?: boolean;
+    message?: string | null;
+  }) =>
+    request<{ url: string; action: "deleted" }>("/github/delete", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   /** Commit a file (or, with `create_folder`, a `<folder>/.gitkeep`) straight to
    * the repo's main branch. Overwrites an existing file at the same path. */
   contributeContent: (body: {

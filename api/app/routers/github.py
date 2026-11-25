@@ -21,7 +21,7 @@ from fastapi.responses import RedirectResponse
 from .. import github_user
 from ..deps import CurrentUser, SessionDep, SettingsDep
 from ..ratelimit import auth_rate_limiter
-from ..schemas.github import ContributeIn, ContributeOut, GithubStatus
+from ..schemas.github import ContributeIn, ContributeOut, DeleteIn, DeleteOut, GithubStatus
 from ..services import content as content_service
 from ..services.exceptions import NotFoundError
 
@@ -36,12 +36,14 @@ _MAX_CONTENT_BYTES = 5 * 1024 * 1024  # 5 MiB
 
 @router.get("/status", response_model=GithubStatus)
 async def status_(settings: SettingsDep, user: CurrentUser) -> GithubStatus:
+    special = settings.is_special_user(user.login)
     return GithubStatus(
         configured=settings.github_contrib_configured,
         server_mode=settings.github_server_writes,
         linked=bool(user.github_username),
         username=user.github_username,
-        can_archive=settings.can_contribute_archive(user.login),
+        can_archive=special,
+        can_delete=special,
     )
 
 
@@ -118,10 +120,10 @@ async def contribute(
 
     if not content_service.section_allowed(data.section):
         raise HTTPException(status_code=404, detail="Sezione non valida.")
-    # The archive section is restricted to an allow-list of 42 logins.
-    if data.section == "archive" and not settings.can_contribute_archive(user.login):
+    # The archive section is restricted to the special users (42 logins).
+    if data.section == "archive" and not settings.is_special_user(user.login):
         raise HTTPException(
-            status_code=403, detail="Solo alcuni studenti possono contribuì all'archivio."
+            status_code=403, detail="Solo gli utenti speciali possono contribuì all'archivio."
         )
 
     # In server-token mode the backend commits for everyone (no per-student link
@@ -189,6 +191,61 @@ async def contribute(
     # The branch changed → drop the cached listing so the change shows at once.
     content_service.invalidate_github_cache(data.section)
     return ContributeOut(url=url, action=action)  # type: ignore[arg-type]
+
+
+@router.post("/delete", response_model=DeleteOut)
+async def delete_content(
+    user: CurrentUser,
+    settings: SettingsDep,
+    data: DeleteIn,
+) -> DeleteOut:
+    """Delete a file or a whole folder under assets/<section>/ (special users only)."""
+    if not settings.github_contrib_configured:
+        raise HTTPException(status_code=503, detail="Contributi GitHub non disponibili.")
+    # Authorization first, server-side: only GITHUB_SPECIAL_USERS may delete.
+    if not settings.is_special_user(user.login):
+        raise HTTPException(status_code=403, detail="Solo gli utenti speciali possono elimina'.")
+    if not content_service.section_allowed(data.section):
+        raise HTTPException(status_code=404, detail="Sezione non valida.")
+
+    server = settings.github_server_writes
+    student_token = github_user.github_token_of(user)
+    if not server and not student_token:
+        raise HTTPException(status_code=409, detail="Collega prima il tuo account GitHub.")
+
+    try:
+        rel = (
+            content_service.confine_folder(data.path)
+            if data.folder
+            else content_service.confine_rel(data.path)
+        )
+    except NotFoundError as exc:
+        raise HTTPException(status_code=400, detail="Percorso non valido.") from exc
+
+    who = user.github_username or user.login
+    try:
+        url = await github_user.delete_path(
+            settings=settings,
+            token=None if server else student_token,
+            section=data.section,
+            rel_path=rel,
+            folder=data.folder,
+            message=(data.message or "").strip() or None,
+            author_login=who,
+            author_name=user.github_username or user.display_name or user.login,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Nun esiste.") from exc
+    except github_user.GithubAuthRequired as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="GitHub ha negato l'operazione (serve accesso in scrittura, o ricollega).",
+        ) from exc
+    except github_user.GithubApiError as exc:
+        raise HTTPException(status_code=502, detail=str(exc) or "GitHub ha rifiutato.") from exc
+
+    content_service.invalidate_github_cache(data.section)
+    return DeleteOut(url=url)
 
 
 def _frontend_redirect(settings, query: str) -> RedirectResponse:

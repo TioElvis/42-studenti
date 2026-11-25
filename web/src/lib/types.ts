@@ -172,7 +172,8 @@ export interface GithubStatus {
   server_mode: boolean;
   linked: boolean;
   username: string | null;
-  can_archive: boolean;
+  can_archive: boolean; // special user: may upload to the archive
+  can_delete: boolean; // special user: may delete files/folders
 }
 
 export interface ActivityStats {

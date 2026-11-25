@@ -108,17 +108,17 @@ class Settings(BaseSettings):
         default="http://localhost:9000/github/link/callback",
         alias="GITHUB_OAUTH_CALLBACK_URL",
     )
-    # Comma-separated 42 logins allowed to contribute to the ARCHIVE section.
-    # Empty = archive contributions are closed to everyone. Material is open to
-    # any linked 42 Roma student.
-    github_archive_allow: str = Field(default="", alias="GITHUB_ARCHIVE_ALLOW")
+    # Comma-separated 42 logins of "special users": they may contribute to the
+    # ARCHIVE section and delete files/folders in Materiale and Archivio.
+    # Empty = nobody. Materiale uploads are open to any linked 42 Roma student.
+    github_special_users: str = Field(default="", alias="GITHUB_SPECIAL_USERS")
 
     @property
-    def archive_allow(self) -> set[str]:
-        return {x.strip().lower() for x in self.github_archive_allow.split(",") if x.strip()}
+    def special_users(self) -> set[str]:
+        return {x.strip().lower() for x in self.github_special_users.split(",") if x.strip()}
 
-    def can_contribute_archive(self, login: str) -> bool:
-        return login.lower() in self.archive_allow
+    def is_special_user(self, login: str) -> bool:
+        return login.lower() in self.special_users
 
     @property
     def github_oauth_configured(self) -> bool:

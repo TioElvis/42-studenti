@@ -12,6 +12,7 @@ import {
   FolderPlus,
   Image as ImageIcon,
   Search,
+  Trash2,
   Upload,
 } from "lucide-react";
 
@@ -21,6 +22,7 @@ import { Window, WindowBar } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ContributeModal } from "./contribute-modal";
+import { DeleteConfirm } from "./delete-confirm";
 import { cn } from "@/lib/utils";
 import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/providers/i18n-provider";
@@ -108,6 +110,8 @@ export function ContentBrowser({
     folder: string;
   }>({ open: false, intent: "upload", folder: "" });
 
+  const [toDelete, setToDelete] = React.useState<{ path: string; folder: boolean } | null>(null);
+
   const load = React.useCallback(() => {
     return api
       .listContent(section)
@@ -179,6 +183,8 @@ export function ContentBrowser({
     !!gh?.configured &&
     (gh.server_mode || gh.linked) &&
     (section === "material" || !!gh.can_archive);
+  // Deleting is for "special users" only (the server enforces it too).
+  const canDelete = !!gh?.configured && !!gh.can_delete;
   const hasAny = tree.files.length > 0 || tree.folders.length > 0;
 
   const toggle = (path: string) =>
@@ -260,6 +266,17 @@ export function ContentBrowser({
             <span className="shrink-0 opacity-70">({countFiles(node)})</span>
           </button>
           {renderFolderActions(node.path, node.path)}
+          {canDelete && (
+            <button
+              type="button"
+              className={cn(iconBtn, !canContribute && "ml-auto")}
+              title={t("delete.folderIn", { name: node.path })}
+              aria-label={t("delete.folderIn", { name: node.path })}
+              onClick={() => setToDelete({ path: node.path, folder: true })}
+            >
+              <Trash2 className="h-3 w-3" aria-hidden />
+            </button>
+          )}
         </div>
         {!isCollapsed && (
           <ul className="ml-2 flex flex-col border-l border-[var(--border-subtle)] pl-2">
@@ -349,6 +366,15 @@ export function ContentBrowser({
                       <Download className="h-4 w-4" /> {t("content.download")}
                     </a>
                   </Button>
+                  {canDelete && (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => setToDelete({ path: selected.path, folder: false })}
+                    >
+                      <Trash2 className="h-4 w-4" /> {t("common.delete")}
+                    </Button>
+                  )}
                   {selected.github_url && (
                     <Button asChild size="sm" variant="outline">
                       <a href={selected.github_url} target="_blank" rel="noopener noreferrer">
@@ -409,6 +435,26 @@ export function ContentBrowser({
           </div>
         </Window>
       </div>
+
+      <DeleteConfirm
+        target={toDelete}
+        section={section}
+        onClose={() => setToDelete(null)}
+        onDeleted={() => {
+          // Drop the open file if it (or its folder) just went away.
+          if (
+            toDelete &&
+            selected &&
+            (toDelete.folder
+              ? selected.path.startsWith(`${toDelete.path}/`)
+              : selected.path === toDelete.path)
+          ) {
+            setSelected(null);
+            setFile(null);
+          }
+          void load();
+        }}
+      />
 
       <ContributeModal
         open={contribute.open}
