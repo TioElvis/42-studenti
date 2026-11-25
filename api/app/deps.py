@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .config import Settings, get_settings
 from .database import get_session
 from .intra import EventsProvider
+from .intra_stats import IntraStats
 from .models.user import User
 from .security import TokenError, decode_access_token
 from .services import users as users_service
@@ -59,3 +60,17 @@ def get_events_provider(settings: SettingsDep) -> EventsProvider:
 
 
 EventsProviderDep = Annotated[EventsProvider, Depends(get_events_provider)]
+
+
+# --- 42 stats snapshot singleton (leaderboards: wallet, cluster time) ---
+_intra_stats: IntraStats | None = None
+
+
+def get_intra_stats(settings: SettingsDep) -> IntraStats:
+    global _intra_stats
+    if _intra_stats is None:
+        _intra_stats = IntraStats(settings)
+    return _intra_stats
+
+
+IntraStatsDep = Annotated[IntraStats, Depends(get_intra_stats)]

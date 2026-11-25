@@ -72,6 +72,12 @@ class Settings(BaseSettings):
     # --- Events cache TTL (seconds) to stay well under 42 API rate limits ---
     events_cache_ttl: int = Field(default=300, alias="EVENTS_CACHE_TTL")
 
+    # --- Studenti leaderboards: 42-based figures (wallet, cluster time) are rebuilt
+    # in the background at most this often, for at most this many students, so we
+    # stay well under the 42 API quota (2 calls per student per refresh).
+    stats_refresh_seconds: int = Field(default=10800, alias="STATS_REFRESH_SECONDS")
+    stats_max_users: int = Field(default=300, alias="STATS_MAX_USERS")
+
     # --- Materiale / Archivio (read from GitHub; assets/ is never mirrored locally) ---
     # Client/proxy cache lifetime (seconds) for cacheable GET responses.
     http_cache_seconds: int = Field(default=60, alias="HTTP_CACHE_SECONDS")

@@ -10,7 +10,11 @@ from __future__ import annotations
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..models.follow import Follow
+from ..models.like import PostLike
+from ..models.post import Post
 from ..models.user import User
+from ..schemas.stats import StatRow
 from ..schemas.user import StudentPage, UserPublic
 
 MIN_QUERY = 2
@@ -76,3 +80,60 @@ async def list_page(
         page=page,
         pages=pages,
     )
+
+
+TOP_N = 10
+
+
+def _row(u: User, value: int) -> StatRow:
+    return StatRow(
+        login=u.login, display_name=u.display_name, avatar_url=u.avatar_url, value=int(value)
+    )
+
+
+async def top_followers(session: AsyncSession, *, limit: int = TOP_N) -> list[StatRow]:
+    """Students with the most followers (ties: login)."""
+    n = func.count(Follow.id)
+    rows = await session.execute(
+        select(User, n)
+        .join(Follow, Follow.followee_id == User.id)
+        .group_by(User.id)
+        .order_by(n.desc(), User.login)
+        .limit(limit)
+    )
+    return [_row(u, c) for u, c in rows.all()]
+
+
+async def top_daje(session: AsyncSession, *, limit: int = TOP_N) -> list[StatRow]:
+    """Students with the most "Daje!" received on their posts. A student's own
+    likes on their own posts don't count (ties: login)."""
+    n = func.count(PostLike.id)
+    rows = await session.execute(
+        select(User, n)
+        .join(Post, Post.author_id == User.id)
+        .join(PostLike, PostLike.post_id == Post.id)
+        .where(PostLike.user_id != Post.author_id)
+        .group_by(User.id)
+        .order_by(n.desc(), User.login)
+        .limit(limit)
+    )
+    return [_row(u, c) for u, c in rows.all()]
+
+
+async def recent_students(session: AsyncSession, *, limit: int) -> list[User]:
+    """The students the 42 snapshot is built for: most recently active first."""
+    rows = await session.execute(
+        select(User).order_by(User.last_login_at.desc().nulls_last(), User.id).limit(limit)
+    )
+    return list(rows.scalars().all())
+
+
+def rank_from_snapshot(
+    values: dict[str, int], by_login: dict[str, User], *, limit: int = TOP_N
+) -> list[StatRow]:
+    """Top ``limit`` positive values among students we know (ties: login)."""
+    ranked = sorted(
+        ((lg, v) for lg, v in values.items() if v > 0 and lg in by_login),
+        key=lambda kv: (-kv[1], kv[0]),
+    )[:limit]
+    return [_row(by_login[lg], v) for lg, v in ranked]

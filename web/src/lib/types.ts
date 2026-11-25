@@ -143,6 +143,24 @@ export interface StudentPage {
   pages: number;
 }
 
+/** One leaderboard entry: a count, wallet points, or seconds of cluster time. */
+export interface StatRow {
+  login: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  value: number;
+}
+
+export interface StudentStats {
+  followers: StatRow[];
+  daje: StatRow[];
+  wallet: StatRow[];
+  cluster: StatRow[];
+  intra_ready: boolean; // false until the first 42 snapshot is built
+  intra_updated_at: string | null;
+  cluster_days: number;
+}
+
 export interface InterestState {
   interested: boolean;
   interest_count: number;

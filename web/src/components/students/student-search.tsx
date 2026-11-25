@@ -11,6 +11,7 @@ import { Window, WindowBar } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StudentStats } from "./student-stats";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useI18n } from "@/providers/i18n-provider";
@@ -74,6 +75,8 @@ export function StudentSearch() {
   return (
     <section>
       <SectionHeading label={t("students.label")} desc={t("students.desc")} />
+
+      <StudentStats />
 
       <Window className="retro-shadow">
         <WindowBar title={t("students.bar")} />
