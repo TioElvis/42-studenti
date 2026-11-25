@@ -18,7 +18,7 @@ api/            FastAPI + async SQLAlchemy + Alembic + vendored 42 client
 web/            Next.js 15 App Router + TS + Tailwind v4 + shadcn-style UI
   src/app/      routes: / (Bacheca), /eventi, /club
   src/components, src/lib, src/providers
-assets/         classic/hacker/bento/bento-hacker .html, rome-pixel.png (design source)
+assets/         classic/hacker .html, rome-pixel.png (design source)
 ```
 
 ## Commands
@@ -54,7 +54,7 @@ Never hand-edit `api/vendor/42api/src/intra42/_sync/` (generated). Edit
   for `/me` and discarded; we issue our own HS256 JWT in an httpOnly cookie.
   The frontend gates on `GET /me` (cookie is on the API origin).
 - **Secrets** only from env (`app/config.py`). Never hardcode; never commit `.env`.
-- **Themes.** `classic`, `hacker`, `bento`, `bento-hacker` share layout and
+- **Themes.** `classic`, `hacker` share layout and
   semantic CSS token *names*; only values swap under `[data-theme=...]` in
   `web/src/app/globals.css`. Palettes come from `assets/`.
 - **Types.** TypeScript `strict` + `noUncheckedIndexedAccess`; Python type hints.

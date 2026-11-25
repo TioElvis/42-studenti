@@ -55,8 +55,6 @@ const it = {
     langIntro: "Scegli la lingua del portale.",
     classicSub: "Travertino & pergamena, 90s OS",
     hackerSub: "Terminale CRT, fosforo verde",
-    bentoSub: "Il Classico Romano, in versione moderna",
-    bentoHackerSub: "Lo SPQR Hacker moderno, verde fosforo",
   },
   userMenu: { logout: "Esci" },
   login: {
@@ -485,8 +483,6 @@ const en: typeof it = {
     langIntro: "Choose the portal's language.",
     classicSub: "Travertine & parchment, 90s OS",
     hackerSub: "CRT terminal, green phosphor",
-    bentoSub: "Classico Romano, the modern evolution",
-    bentoHackerSub: "SPQR Hacker, modern phosphor-green",
   },
   userMenu: { logout: "Log out" },
   login: {

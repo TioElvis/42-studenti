@@ -5,12 +5,10 @@ import { useI18n } from "@/providers/i18n-provider";
 export function StatusPill() {
   const { theme } = useTheme();
   const { t } = useI18n();
-  // Each theme has its own flavor: retro terminal, warm Roman, or dev/cluster.
+  // Each theme has its own flavor: classic or retro terminal.
   const labels: Record<Theme, string> = {
     classic: t("status.online"),
     hacker: "NODE_ONLINE :: 42_INTRA_SYNCED",
-    bento: "Campus Roma Online",
-    "bento-hacker": "NODE_ONLINE :: 42_SYNC",
   };
   return (
     <span className="inline-flex items-center gap-2 border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-[family-name:var(--font-ui)] retro-shadow-sm rounded-[var(--radius-pill)]">

@@ -1,16 +1,16 @@
 ---
 name: web-theme-component
-description: Use when building or styling frontend UI in 42-studenti/web (Next.js 15, Tailwind v4, Radix + CVA) - semantic CSS tokens shared by the 4 themes, Italian/Roman slang copy and typecheck/lint steps.
+description: Use when building or styling frontend UI in 42-studenti/web (Next.js 15, Tailwind v4, Radix + CVA) - semantic CSS tokens shared by the 2 themes, Italian/Roman slang copy and typecheck/lint steps.
 ---
 
 # Web UI component and themes (42-studenti/web)
 
 ## Themes
-Four themes switch via `[data-theme]` in `web/src/app/globals.css`:
-`classic`, `hacker`, `bento`, `bento-hacker`. They share the same layout and
+Two themes switch via `[data-theme]` in `web/src/app/globals.css`:
+`classic`, `hacker`. They share the same layout and
 **semantic token names**; only values change per theme. Design source of truth
-is in `assets/` (`classic.html`, `hacker.html`, `bento.html`,
-`bento-hacker.html`, `rome-pixel.png`).
+is in `assets/` (`classic.html`, `hacker.html`,
+`rome-pixel.png`).
 
 - Style with the semantic tokens (e.g. `bg-surface`, `text-fg`), never raw hex
   colors, so every theme works.

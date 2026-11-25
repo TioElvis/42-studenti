@@ -30,18 +30,6 @@ const OPTIONS: ThemeOption[] = [
     subKey: "settings.hackerSub",
     swatches: ["#0b0d0e", "#00ff88", "#e63946", "#00e5ff", "#ffb703"],
   },
-  {
-    id: "bento",
-    name: "Bento",
-    subKey: "settings.bentoSub",
-    swatches: ["#f8f9fa", "#e11d48", "#10b981", "#6366f1", "#0f172a"],
-  },
-  {
-    id: "bento-hacker",
-    name: "Bento Hacker",
-    subKey: "settings.bentoHackerSub",
-    swatches: ["#080a0c", "#00ff88", "#e63946", "#00e5ff", "#ffb703"],
-  },
 ];
 
 export function SettingsModal({ compact = false }: { compact?: boolean }) {
