@@ -63,9 +63,12 @@ Never hand-edit `api/vendor/42api/src/intra42/_sync/` (generated). Edit
 
 ## assets/ isolation
 
-Materiale / Archivio content lives only on GitHub (`assets/material|archive`).
-Never read, download, clone or mirror `assets/` content locally (agents, scripts,
-backend). The API lists via the Git Trees API (metadata) and proxies bytes
+Materiale / Archivio content lives only in the separate **private** repo
+`TioElvis/42-studenti-assets` (`assets/material|archive`), set via `GITHUB_REPO`
+and written/read with the server `GITHUB_WRITE_TOKEN`. This repo's `assets/` keeps
+only the design references. Never read, download, clone or mirror the content
+locally (agents, scripts, backend); the sibling checkout
+`~/Projects/42-studenti-assets` holds only the `subject.*.txt` files. The API lists via the Git Trees API (metadata) and proxies bytes
 through memory only. Contributions are direct commits to `GITHUB_BRANCH`
 (no PRs); same path = update. Deleting files/folders and uploading to the
 archive are limited to `GITHUB_SPECIAL_USERS` (42 logins), enforced server-side.
@@ -73,9 +76,10 @@ archive are limited to `GITHUB_SPECIAL_USERS` (42 logins), enforced server-side.
 ## Feature changelog (always)
 
 Whenever a new user-facing feature is added, changed or removed, also update
-BOTH `assets/archive/subject.en.txt` and `assets/archive/subject.it.txt` (the
-"what the app can do" overview): edit the matching section in each, keep them in
-sync, and do it in the same piece of work as the feature.
+BOTH `assets/archive/subject.en.txt` and `assets/archive/subject.it.txt` in the
+private repo `~/Projects/42-studenti-assets` (the "what the app can do" overview):
+edit the matching section in each, keep them in sync, commit there, and do it in
+the same piece of work as the feature.
 
 ## Roadmap status
 
