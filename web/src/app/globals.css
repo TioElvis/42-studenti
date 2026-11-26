@@ -78,7 +78,7 @@
   --ribbon-bg: #121618;
   --ribbon-fg: #e63946;
 
-  --body-font: var(--font-mono);
+  --body-font: var(--font-sans);
   --grid-color: rgba(0, 255, 136, 0.03);
   --grid-size: 24px;
   --scanline-opacity: 1;
