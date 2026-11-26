@@ -38,6 +38,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (isTheme(stored)) {
         setThemeState(stored);
+        // Re-apply it in case the attribute set before paint was reset.
+        document.documentElement.setAttribute("data-theme", stored);
       }
     } catch {
       /* localStorage unavailable (private mode) — keep the default. */
