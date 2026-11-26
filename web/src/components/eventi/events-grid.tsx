@@ -16,12 +16,6 @@ import { cn } from "@/lib/utils";
 import { dateBlock, timeRange } from "@/lib/time";
 import type { EventItem, InterestState } from "@/lib/types";
 
-/*
- * TODO (Step 2.1): add a "Proponi un evento" button + form here so students can
- * submit community events (POST /events on the backend). For now this grid is
- * read-only and shows only official 42 Roma events.
- */
-
 export function EventsGrid() {
   const { t } = useI18n();
   const [events, setEvents] = React.useState<EventItem[] | null>(null);

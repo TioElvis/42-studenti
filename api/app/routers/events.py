@@ -4,9 +4,6 @@ plus local "Mi interessa" RSVPs.
 Official 42 events can't be joined via our ``public`` OAuth scope, so interest
 is tracked in our own DB (see services/events.py). Interest is per student and
 counted across the campus; counts update live over the WebSocket.
-
-TODO (Step 2.1): add POST /events to let authenticated students PROPOSE custom
-community events (stored locally, clearly separated from official 42 events).
 """
 
 from __future__ import annotations

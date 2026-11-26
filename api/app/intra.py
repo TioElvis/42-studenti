@@ -3,11 +3,6 @@
 The rest of the app depends on :class:`EventsProvider`, not on ``intra42``
 directly (DIP). Results are cached in-process for ``events_cache_ttl`` seconds
 so repeated page loads don't burn through the 42 API hourly quota.
-
-TODO (Step 2.1): when students can propose community events from the frontend,
-add a write path here (or a separate local-events store) so proposed events are
-merged with the official 42 Intra feed. Keep official vs. community events
-clearly distinguished in the response.
 """
 
 from __future__ import annotations

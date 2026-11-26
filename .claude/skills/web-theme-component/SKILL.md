@@ -36,8 +36,8 @@ is in `assets/` (`classic.html`, `hacker.html`,
 - Dates via `src/lib/time.ts` (Italian locale, Rome time).
 
 ## Scope guard
-- Do **not** implement "Step 2.1" (students proposing events). Keep the TODO
-  marker in `eventi/events-grid.tsx`.
+- Students propose events as Bacheca "sondaggi"; the Eventi grid shows only
+  official 42 events.
 - Club (`/club`) stays a "Prossimamente" page.
 
 ## TypeScript

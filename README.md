@@ -155,5 +155,5 @@ and language are chosen in the settings window.
 
 - [x] Bacheca
 - [x] Eventi (official 42 Roma events)
-- [ ] Events proposed by students
+- [x] Events proposed by students (as "sondaggi" on the Bacheca)
 - [ ] Clubs (only the "coming soon" page exists)

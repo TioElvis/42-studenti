@@ -85,8 +85,5 @@ the same piece of work as the feature.
 
 - Step 1 La Bacheca: DONE. Step 2 Eventi (official 42 Roma events, cached): DONE.
 - Step 3 Club: "Prossimamente" view only (no backend CRUD).
-- **TODO Step 2.1 — do NOT implement yet:** students propose community events.
-  Markers: `POST /events` note in `api/app/routers/events.py` and
-  `api/app/intra.py`; "Proponi un evento" TODO in
-  `web/src/components/eventi/events-grid.tsx`. Keep proposed events clearly
-  separate from official 42 events.
+- Step 2.1 (students propose community events): DONE, as Bacheca "sondaggi".
+  Keep them separate from official 42 events.
