@@ -27,6 +27,7 @@ import type {
   Profile,
   PostPage,
   PostType,
+  PushSubscriptionBody,
   RsvpState,
   UserMe,
   UserPublic,
@@ -213,6 +214,18 @@ export const api = {
     request<NotificationSettings>("/notifications/settings", {
       method: "PATCH",
       body: JSON.stringify(body),
+    }),
+
+  pushKey: () => request<{ public_key: string | null }>("/notifications/push/key"),
+  pushSubscribe: (body: PushSubscriptionBody) =>
+    request<void>("/notifications/push/subscribe", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  pushUnsubscribe: (endpoint: string) =>
+    request<void>("/notifications/push/unsubscribe", {
+      method: "POST",
+      body: JSON.stringify({ endpoint }),
     }),
 
   githubStatus: () => request<GithubStatus>("/github/status"),

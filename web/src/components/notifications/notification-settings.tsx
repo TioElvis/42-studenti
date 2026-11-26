@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { disablePush, enablePush, isPushEnabled, isPushSupported } from "@/lib/push";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/providers/i18n-provider";
 import type { NotificationSettings, PostNotify } from "@/lib/types";
@@ -18,10 +19,12 @@ const POST_OPTIONS: { id: PostNotify; key: string }[] = [
 function Toggle({
   label,
   checked,
+  disabled,
   onChange,
 }: {
   label: string;
   checked: boolean;
+  disabled?: boolean;
   onChange: (v: boolean) => void;
 }) {
   return (
@@ -29,8 +32,9 @@ function Toggle({
       type="button"
       role="switch"
       aria-checked={checked}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="mt-2.5 flex w-full items-center justify-between gap-3 border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-left transition-colors hover:bg-[var(--surface-2)] rounded-[var(--radius-button)]"
+      className="mt-2.5 flex w-full items-center justify-between gap-3 border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-left transition-colors hover:bg-[var(--surface-2)] disabled:cursor-not-allowed disabled:opacity-60 rounded-[var(--radius-button)]"
     >
       <span className="font-mono text-sm">{label}</span>
       <span
@@ -48,6 +52,80 @@ function Toggle({
         />
       </span>
     </button>
+  );
+}
+
+/** Browser notifications on this device. Hidden if the server has push off. */
+function BrowserPushToggle() {
+  const { t, lang } = useI18n();
+  const [publicKey, setPublicKey] = React.useState<string | null>(null);
+  const [supported, setSupported] = React.useState(true);
+  const [blocked, setBlocked] = React.useState(false);
+  const [enabled, setEnabled] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let active = true;
+    async function load() {
+      const { public_key } = await api.pushKey();
+      const ok = isPushSupported();
+      const on = await isPushEnabled();
+      if (!active) return;
+      setPublicKey(public_key);
+      setSupported(ok);
+      setBlocked(ok && Notification.permission === "denied");
+      setEnabled(on);
+    }
+    // If this fails the switch stays hidden; the other settings still work.
+    load().catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function toggle(next: boolean) {
+    if (!publicKey || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (next) {
+        setEnabled(await enablePush(publicKey, lang));
+        setBlocked(Notification.permission === "denied");
+      } else {
+        await disablePush();
+        setEnabled(false);
+      }
+    } catch {
+      setEnabled(await isPushEnabled().catch(() => false));
+      setError(t("notifications.pushError"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!publicKey) return null;
+
+  const hint = !supported
+    ? "notifications.pushUnsupported"
+    : blocked
+      ? "notifications.pushBlocked"
+      : "notifications.pushHint";
+
+  return (
+    <div className="mt-4">
+      <p className="font-mono text-xs font-bold uppercase tracking-wide text-[var(--text-muted)]">
+        {t("notifications.pushHeading")}
+      </p>
+      <Toggle
+        label={t("notifications.pushLabel")}
+        checked={enabled}
+        disabled={busy || !supported || blocked}
+        onChange={toggle}
+      />
+      <p className="mt-1.5 text-xs text-[var(--text-muted)]">{t(hint)}</p>
+      {error && <p className="mt-1.5 text-xs text-[var(--primary)]">{error}</p>}
+    </div>
   );
 }
 
@@ -137,6 +215,8 @@ export function NotificationSettingsSection() {
       />
 
       {error && <p className="mt-2 text-xs text-[var(--primary)]">{error}</p>}
+
+      <BrowserPushToggle />
     </div>
   );
 }

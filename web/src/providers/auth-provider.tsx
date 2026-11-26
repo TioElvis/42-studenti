@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { api, ApiError } from "@/lib/api";
+import { disablePush } from "@/lib/push";
 import type { UserMe } from "@/lib/types";
 
 /** `waking`: the API is unreachable/slow (e.g. a sleeping host) — we show the
@@ -21,6 +22,8 @@ const AuthContext = React.createContext<AuthContextValue | null>(null);
 // If /me hasn't answered after this long, show the wake screen instead of a
 // plain spinner (a cold-started host can take up to a minute).
 const SLOW_MS = 3_000;
+// Longest the logout waits for this browser's notifications to be turned off.
+const PUSH_LOGOUT_MS = 3_000;
 // Gentle backoff between /health probes while the API wakes up.
 const POLL_DELAYS_MS = [2_000, 3_000, 5_000];
 
@@ -78,6 +81,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = React.useCallback(async () => {
     try {
+      // While still logged in, so the server can forget this browser. A slow or
+      // failing push service must not block the logout.
+      await Promise.race([
+        disablePush().catch(() => {}),
+        new Promise((resolve) => setTimeout(resolve, PUSH_LOGOUT_MS)),
+      ]);
       await api.logout();
     } finally {
       setUser(null);

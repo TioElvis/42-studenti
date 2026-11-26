@@ -263,6 +263,12 @@ export interface NotificationSettings {
   notify_follows: boolean;
 }
 
+export interface PushSubscriptionBody {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  lang: "it" | "en";
+}
+
 export interface Profile {
   login: string;
   display_name: string | null;

@@ -5,6 +5,7 @@ import { Bell } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { syncPush } from "@/lib/push";
 import { useI18n } from "@/providers/i18n-provider";
 import { NotificationDialog } from "./notification-dialog";
 
@@ -12,7 +13,7 @@ const POLL_MS = 30_000;
 
 /** Header bell: polls the unread count and shows a badge. Opens the dialog. */
 export function NotificationBell() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [unread, setUnread] = React.useState(0);
   const [open, setOpen] = React.useState(false);
 
@@ -39,6 +40,12 @@ export function NotificationBell() {
       document.removeEventListener("visibilitychange", tick);
     };
   }, [refresh]);
+
+  // Keep this browser's push subscription tied to the logged-in student and
+  // language.
+  React.useEffect(() => {
+    void syncPush(lang).catch(() => {});
+  }, [lang]);
 
   // Re-sync when the dialog closes (any just-read state is reflected).
   const handleOpenChange = React.useCallback(
