@@ -9,6 +9,7 @@ import { useI18n } from "@/providers/i18n-provider";
 import type { NotificationFilter } from "@/lib/types";
 import { NotificationList } from "./notification-list";
 import { NotificationSettingsSection } from "./notification-settings";
+import { PushStatusBadge } from "./push-status-badge";
 
 const TABS: { id: NotificationFilter; key: string }[] = [
   { id: "all", key: "notifications.filterAll" },
@@ -98,11 +99,14 @@ export function NotificationDialog({
           </>
         ) : (
           open && (
-            <NotificationList
-              filter={filter}
-              onUnreadCleared={onUnreadCleared}
-              onItemClick={() => onOpenChange(false)}
-            />
+            <>
+              <PushStatusBadge />
+              <NotificationList
+                filter={filter}
+                onUnreadCleared={onUnreadCleared}
+                onItemClick={() => onOpenChange(false)}
+              />
+            </>
           )
         )}
       </DialogContent>

@@ -5,10 +5,10 @@ import { Check } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import { disablePush, enablePush, isPushEnabled, isPushSupported } from "@/lib/push";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/providers/i18n-provider";
 import type { NotificationSettings, PostNotify } from "@/lib/types";
+import { useBrowserPush } from "./use-browser-push";
 
 const POST_OPTIONS: { id: PostNotify; key: string }[] = [
   { id: "followed", key: "notifications.postsFollowed" },
@@ -57,54 +57,10 @@ function Toggle({
 
 /** Browser notifications on this device. Hidden if the server has push off. */
 function BrowserPushToggle() {
-  const { t, lang } = useI18n();
-  const [publicKey, setPublicKey] = React.useState<string | null>(null);
-  const [supported, setSupported] = React.useState(true);
-  const [blocked, setBlocked] = React.useState(false);
-  const [enabled, setEnabled] = React.useState(false);
-  const [busy, setBusy] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const { t } = useI18n();
+  const { available, supported, blocked, enabled, busy, failed, toggle } = useBrowserPush();
 
-  React.useEffect(() => {
-    let active = true;
-    async function load() {
-      const { public_key } = await api.pushKey();
-      const ok = isPushSupported();
-      const on = await isPushEnabled();
-      if (!active) return;
-      setPublicKey(public_key);
-      setSupported(ok);
-      setBlocked(ok && Notification.permission === "denied");
-      setEnabled(on);
-    }
-    // If this fails the switch stays hidden; the other settings still work.
-    load().catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  async function toggle(next: boolean) {
-    if (!publicKey || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      if (next) {
-        setEnabled(await enablePush(publicKey, lang));
-        setBlocked(Notification.permission === "denied");
-      } else {
-        await disablePush();
-        setEnabled(false);
-      }
-    } catch {
-      setEnabled(await isPushEnabled().catch(() => false));
-      setError(t("notifications.pushError"));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (!publicKey) return null;
+  if (!available) return null;
 
   const hint = !supported
     ? "notifications.pushUnsupported"
@@ -124,7 +80,9 @@ function BrowserPushToggle() {
         onChange={toggle}
       />
       <p className="mt-1.5 text-xs text-[var(--text-muted)]">{t(hint)}</p>
-      {error && <p className="mt-1.5 text-xs text-[var(--primary)]">{error}</p>}
+      {failed && (
+        <p className="mt-1.5 text-xs text-[var(--primary)]">{t("notifications.pushError")}</p>
+      )}
     </div>
   );
 }

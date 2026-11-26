@@ -432,6 +432,11 @@ const it = {
     pushBlocked: "L'hai bloccate: riabilitale dalle impostazioni der browser.",
     pushUnsupported: "Sto browser nun regge le notifiche.",
     pushError: "Nun riesco a cambià le notifiche der browser.",
+    pushStatusOn: "Notifiche browser attive",
+    pushStatusOff: "Notifiche browser spente",
+    pushStatusBlocked: "Notifiche browser bloccate",
+    pushEnable: "Attiva",
+    pushDisable: "Disattiva",
   },
   stats: {
     bar: "CLASSIFICHE.EXE",
@@ -916,6 +921,11 @@ const en: typeof it = {
     pushBlocked: "Blocked: allow them again in your browser settings.",
     pushUnsupported: "This browser doesn't support notifications.",
     pushError: "Couldn't change browser notifications.",
+    pushStatusOn: "Browser notifications on",
+    pushStatusOff: "Browser notifications off",
+    pushStatusBlocked: "Browser notifications blocked",
+    pushEnable: "Turn on",
+    pushDisable: "Turn off",
   },
   stats: {
     bar: "LEADERBOARDS.EXE",
