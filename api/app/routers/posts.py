@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, BackgroundTasks, Query, status
 
 from ..deps import CurrentUser, SessionDep
 from ..models.enums import PostCategory, PostType
@@ -20,6 +20,7 @@ from ..schemas.post import (
 from ..schemas.user import UserPublic
 from ..services import notifications as notif_service
 from ..services import posts as posts_service
+from ..services import push as push_service
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 
@@ -47,11 +48,16 @@ async def list_posts(
 
 
 @router.post("", response_model=PostDetail, status_code=status.HTTP_201_CREATED)
-async def create_post(session: SessionDep, user: CurrentUser, data: PostCreate) -> PostDetail:
+async def create_post(
+    session: SessionDep, user: CurrentUser, data: PostCreate, background: BackgroundTasks
+) -> PostDetail:
     created = await posts_service.create_post(session, author=user, data=data)
     detail = await posts_service.get_detail(session, post_id=created.id, viewer_id=user.id)
     await manager.broadcast("post.created", detail.model_dump(mode="json"))
-    await notif_service.create_post_notifications(session, post_id=created.id, author_id=user.id)
+    ids = await notif_service.create_post_notifications(
+        session, post_id=created.id, author_id=user.id
+    )
+    background.add_task(push_service.deliver, ids)
     return detail
 
 

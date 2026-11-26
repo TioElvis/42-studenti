@@ -1,4 +1,4 @@
-"""Notifications: list, unread count, mark read, and notification settings."""
+"""Notifications: list, unread count, mark read, settings and browser push."""
 
 from __future__ import annotations
 
@@ -6,15 +6,19 @@ from typing import Literal
 
 from fastapi import APIRouter, Query, Response, status
 
-from ..deps import CurrentUser, SessionDep
+from ..deps import CurrentUser, SessionDep, SettingsDep
 from ..models.enums import NotificationType
 from ..schemas.notification import (
     NotificationPage,
     NotificationSettings,
     NotificationSettingsUpdate,
+    PushKey,
+    PushSubscriptionIn,
+    PushUnsubscribeIn,
     UnreadCount,
 )
 from ..services import notifications as notif_service
+from ..services import push as push_service
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -67,3 +71,20 @@ async def update_settings(
     session: SessionDep, user: CurrentUser, data: NotificationSettingsUpdate
 ) -> NotificationSettings:
     return await notif_service.update_settings(session, user=user, data=data)
+
+
+@router.get("/push/key", response_model=PushKey)
+async def push_key(user: CurrentUser, settings: SettingsDep) -> PushKey:
+    return PushKey(public_key=settings.vapid_public_key if settings.push_configured else None)
+
+
+@router.post("/push/subscribe", status_code=status.HTTP_204_NO_CONTENT)
+async def push_subscribe(session: SessionDep, user: CurrentUser, data: PushSubscriptionIn) -> None:
+    await push_service.subscribe(session, user_id=user.id, data=data)
+
+
+@router.post("/push/unsubscribe", status_code=status.HTTP_204_NO_CONTENT)
+async def push_unsubscribe(
+    session: SessionDep, user: CurrentUser, data: PushUnsubscribeIn
+) -> None:
+    await push_service.unsubscribe(session, user_id=user.id, endpoint=data.endpoint)

@@ -69,6 +69,21 @@ class Settings(BaseSettings):
     database_url: str = Field(default="", alias="DATABASE_URL")
     direct_url: str = Field(default="", alias="DIRECT_URL")
 
+    # --- Browser notifications (Web Push). Off until both VAPID keys are set;
+    # the subject is the contact URI push services require (mailto: or https:).
+    vapid_public_key: str = Field(default="", alias="VAPID_PUBLIC_KEY")
+    vapid_private_key: str = Field(default="", alias="VAPID_PRIVATE_KEY")
+    vapid_subject: str = Field(default="", alias="VAPID_SUBJECT")
+
+    @property
+    def push_configured(self) -> bool:
+        # Any other subject makes every send fail while signing.
+        return bool(
+            self.vapid_public_key
+            and self.vapid_private_key
+            and self.vapid_subject.startswith(("mailto:", "https://"))
+        )
+
     # --- Events cache TTL (seconds) to stay well under 42 API rate limits ---
     events_cache_ttl: int = Field(default=300, alias="EVENTS_CACHE_TTL")
 

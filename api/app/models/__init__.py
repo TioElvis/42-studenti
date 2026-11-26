@@ -11,6 +11,7 @@ from .like import PostLike
 from .notification import Notification
 from .poll import PollOption, PollVote
 from .post import Post
+from .push_subscription import PushSubscription
 from .rsvp import PostRSVP
 from .user import User
 
@@ -28,6 +29,7 @@ __all__ = [
     "Notification",
     "NotificationType",
     "PostNotify",
+    "PushSubscription",
     "PollMode",
     "PollOption",
     "PollVote",

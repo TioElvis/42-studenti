@@ -52,9 +52,10 @@ async def _maybe_purge(session: AsyncSession) -> None:
 
 async def create_post_notifications(
     session: AsyncSession, *, post_id: int, author_id: int
-) -> None:
+) -> list[int]:
     """Notify everyone eligible for a new post: `notify_posts='all'`, plus the
-    author's followers with `notify_posts='followed'` (never the author)."""
+    author's followers with `notify_posts='followed'` (never the author).
+    Like the other ``create_*`` functions, returns the new notification ids."""
     followers = select(Follow.follower_id).where(Follow.followee_id == author_id)
     rows = await session.execute(
         select(User.id).where(
@@ -67,25 +68,25 @@ async def create_post_notifications(
     )
     recipients = [rid for (rid,) in rows.all()]
     if not recipients:
-        return
-    session.add_all(
-        [
-            Notification(
-                recipient_id=rid, actor_id=author_id, type=NotificationType.POST, post_id=post_id
-            )
-            for rid in recipients
-        ]
-    )
+        return []
+    notifs = [
+        Notification(
+            recipient_id=rid, actor_id=author_id, type=NotificationType.POST, post_id=post_id
+        )
+        for rid in recipients
+    ]
+    session.add_all(notifs)
     await session.commit()
+    return [n.id for n in notifs]
 
 
 async def create_comment_notifications(
     session: AsyncSession, *, post_id: int, actor_id: int, parent_comment_id: int | None
-) -> None:
+) -> list[int]:
     """Notify the post author (comment) and, for a reply, the parent's author."""
     post = await session.get(Post, post_id)
     if post is None:
-        return
+        return []
     notifs: list[Notification] = []
     if post.author_id != actor_id:
         author = await session.get(User, post.author_id)
@@ -115,17 +116,20 @@ async def create_comment_notifications(
     if notifs:
         session.add_all(notifs)
         await session.commit()
+    return [n.id for n in notifs]
 
 
 async def create_follow_notification(
     session: AsyncSession, *, followee: User, actor_id: int
-) -> None:
+) -> list[int]:
     if not followee.notify_follows:
-        return
-    session.add(
-        Notification(recipient_id=followee.id, actor_id=actor_id, type=NotificationType.FOLLOW)
+        return []
+    notif = Notification(
+        recipient_id=followee.id, actor_id=actor_id, type=NotificationType.FOLLOW
     )
+    session.add(notif)
     await session.commit()
+    return [notif.id]
 
 
 async def list_notifications(

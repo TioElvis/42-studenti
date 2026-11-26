@@ -20,6 +20,8 @@ authlib==1.9.9
 httpx==0.28.1
 python-jose[cryptography]==3.5.0
 itsdangerous==2.2.0
+# --- Browser notifications (Web Push + VAPID) ---
+pywebpush==2.5.0
 # --- Tests ---
 pytest==9.2.0
 pytest-asyncio==1.5.0
