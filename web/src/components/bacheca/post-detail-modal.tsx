@@ -232,9 +232,11 @@ export function PostDetailModal({
             </header>
 
             {detail.title && <h3 className="font-display text-lg font-bold">{detail.title}</h3>}
-            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-              <Linkify>{detail.content}</Linkify>
-            </p>
+            {detail.content && (
+              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                <Linkify>{detail.content}</Linkify>
+              </p>
+            )}
 
             <div>
               <LikeButton

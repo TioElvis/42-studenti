@@ -7,6 +7,7 @@ async def _make(client, **overrides):
     # participate=False so these RSVP/capacity tests start with an empty poll
     # (the author auto-join default is covered in test_polls.py).
     payload = {
+        "title": "Titolo",
         "content": "Se vedemo?",
         "category": "evento_casuale",
         "post_type": "sondaggio",
@@ -67,7 +68,7 @@ async def test_capacity_enforced_409(client, users):
 
 
 async def test_rsvp_on_plain_post_rejected(client):
-    plain = await client.post("/posts", json={"content": "ciao", "category": "studio"})
+    plain = await client.post("/posts", json={"title": "Titolo", "content": "ciao", "category": "studio"})
     pid = plain.json()["id"]
     resp = await client.post(f"/posts/{pid}/rsvp")
     assert resp.status_code == 409
@@ -89,7 +90,7 @@ async def test_attendees_list(client, users):
 async def test_cursor_pagination(client):
     created_ids = []
     for i in range(5):
-        r = await client.post("/posts", json={"content": f"post {i}", "category": "studio"})
+        r = await client.post("/posts", json={"title": "Titolo", "content": f"post {i}", "category": "studio"})
         created_ids.append(r.json()["id"])
 
     first = (await client.get("/posts", params={"limit": 2})).json()
@@ -140,6 +141,6 @@ async def test_edit_set_unlimited(client):
 
 
 async def test_edit_capacity_on_plain_post_rejected(client):
-    plain = (await client.post("/posts", json={"content": "x", "category": "studio"})).json()
+    plain = (await client.post("/posts", json={"title": "Titolo", "content": "x", "category": "studio"})).json()
     r = await client.patch(f"/posts/{plain['id']}", json={"max_participants": 5})
     assert r.status_code == 409

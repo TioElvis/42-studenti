@@ -7,6 +7,7 @@ async def _create_options_poll(client, *, multi: bool, options=("A", "B", "C")):
     resp = await client.post(
         "/posts",
         json={
+            "title": "Titolo",
             "content": "Quando ci vediamo?",
             "category": "off_topic",
             "post_type": "sondaggio",
@@ -66,6 +67,7 @@ async def test_options_poll_needs_two_options(client):
     resp = await client.post(
         "/posts",
         json={
+            "title": "Titolo",
             "content": "x",
             "category": "off_topic",
             "post_type": "sondaggio",
@@ -80,6 +82,7 @@ async def test_attendance_auto_join(client):
     joined = await client.post(
         "/posts",
         json={
+            "title": "Titolo",
             "content": "Vieni?",
             "category": "off_topic",
             "post_type": "sondaggio",
@@ -93,6 +96,7 @@ async def test_attendance_auto_join(client):
     not_joined = await client.post(
         "/posts",
         json={
+            "title": "Titolo",
             "content": "Vieni?",
             "category": "off_topic",
             "post_type": "sondaggio",
@@ -105,7 +109,7 @@ async def test_attendance_auto_join(client):
 async def test_vote_on_non_options_post_conflicts(client):
     # A plain post isn't a poll.
     post = (
-        await client.post("/posts", json={"content": "ciao", "category": "off_topic"})
+        await client.post("/posts", json={"title": "Titolo", "content": "ciao", "category": "off_topic"})
     ).json()
     resp = await client.post(f"/posts/{post['id']}/poll/vote", json={"option_id": 1})
     assert resp.status_code == 409

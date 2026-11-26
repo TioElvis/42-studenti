@@ -4,7 +4,11 @@ from __future__ import annotations
 
 
 async def _create_post(client, **overrides):
-    payload = {"content": "Sessione minishell in cluster alle 15!", "category": "studio"}
+    payload = {
+        "title": "Titolo",
+        "content": "Sessione minishell in cluster alle 15!",
+        "category": "studio",
+    }
     payload.update(overrides)
     resp = await client.post("/posts", json=payload)
     assert resp.status_code == 201, resp.text
@@ -49,14 +53,36 @@ async def test_category_filter_multi(client):
 
 
 async def test_invalid_category_rejected(client):
-    resp = await client.post("/posts", json={"content": "x", "category": "not_a_category"})
+    resp = await client.post("/posts", json={"title": "Titolo", "category": "not_a_category"})
     assert resp.status_code == 422
 
 
-async def test_empty_content_rejected(client):
-    resp = await client.post("/posts", json={"content": "   ", "category": "studio"})
-    assert resp.status_code == 422
+async def test_title_required(client):
+    for payload in ({}, {"title": None}, {"title": "   "}):
+        resp = await client.post("/posts", json={"content": "x", "category": "studio", **payload})
+        assert resp.status_code == 422, resp.text
 
+
+async def test_description_is_optional(client):
+    resp = await client.post("/posts", json={"title": "Solo titolo", "category": "studio"})
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["content"] == ""
+
+    blank = await _create_post(client, content="   ")
+    assert blank["content"] == ""
+
+
+async def test_update_clears_description_but_keeps_title(client):
+    post = await _create_post(client)
+    url = f"/posts/{post['id']}"
+
+    cleared = await client.patch(url, json={"content": ""})
+    assert cleared.status_code == 200, cleared.text
+    assert cleared.json()["content"] == ""
+    assert cleared.json()["title"] == "Titolo"
+
+    for title in (None, "   "):
+        assert (await client.patch(url, json={"title": title})).status_code == 422
 
 async def test_like_toggle(client):
     post = await _create_post(client)
@@ -143,7 +169,7 @@ async def _ids(client, **params):
 
 async def test_search_title_description_and_case_insensitive(client):
     a = await _create_post(client, title="Peer Learning", content="boh")
-    b = await _create_post(client, title=None, content="Cerco un Compagno per la minishell")
+    b = await _create_post(client, title="boh", content="Cerco un Compagno per la minishell")
     await _create_post(client, title="altro", content="niente")
     assert await _ids(client, q="peer learning") == [a["id"]]  # title, any case
     assert await _ids(client, q="COMPAGNO") == [b["id"]]  # description

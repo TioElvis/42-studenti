@@ -17,7 +17,7 @@ async def _post(session, author, text, *, category=PostCategory.OFF_TOPIC, post_
     return await posts_svc.create_post(
         session,
         author=author,
-        data=PostCreate(content=text, category=category, post_type=post_type),
+        data=PostCreate(title="Titolo", content=text, category=category, post_type=post_type),
     )
 
 

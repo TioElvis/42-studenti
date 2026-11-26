@@ -91,7 +91,7 @@ export function PostFormModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!content.trim()) {
+    if (!title.trim()) {
       setError(t("postForm.errEmpty"));
       return;
     }
@@ -184,6 +184,7 @@ export function PostFormModal({
               onChange={(e) => setTitle(e.target.value)}
               maxLength={140}
               placeholder={t("postForm.titlePlaceholder")}
+              required
             />
           </div>
 
@@ -197,7 +198,6 @@ export function PostFormModal({
               maxLength={4000}
               rows={5}
               placeholder={t("postForm.msgPlaceholder")}
-              required
             />
           </div>
 

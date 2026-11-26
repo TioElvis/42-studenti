@@ -53,7 +53,7 @@ class _Provider:
 
 async def _post(session, author, text):
     return await posts_svc.create_post(
-        session, author=author, data=PostCreate(content=text, category=PostCategory.OFF_TOPIC)
+        session, author=author, data=PostCreate(title="Titolo", content=text, category=PostCategory.OFF_TOPIC)
     )
 
 

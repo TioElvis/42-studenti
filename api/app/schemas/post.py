@@ -19,26 +19,17 @@ POLL_OPTIONS_MAX = 10
 POLL_OPTION_MAX_LEN = 120
 
 
-def _strip_optional(v: str | None) -> str | None:
-    """Trim; turn an empty/whitespace string into None (used for the title)."""
-    if v is None:
-        return None
-    return v.strip() or None
-
-
-def _strip_required(v: str | None) -> str | None:
-    """Trim; reject an empty/whitespace body (used for post/comment content)."""
-    if v is None:
-        return None
-    v = v.strip()
+def _strip_required(v: str | None) -> str:
+    """Trim; reject ``None`` or an empty/whitespace string (used for the title)."""
+    v = (v or "").strip()
     if not v:
-        raise ValueError("Content cannot be empty")
+        raise ValueError("Il titolo è obbligatorio.")
     return v
 
 
 class PostCreate(BaseModel):
-    title: str | None = Field(default=None, max_length=TITLE_MAX)
-    content: str = Field(min_length=1, max_length=CONTENT_MAX)
+    title: str = Field(min_length=1, max_length=TITLE_MAX)
+    content: str = Field(default="", max_length=CONTENT_MAX)  # optional description
     category: PostCategory
     post_type: PostType = PostType.POST
     # Only used for a sondaggio. None = unlimited (where allowed).
@@ -52,13 +43,13 @@ class PostCreate(BaseModel):
 
     @field_validator("title")
     @classmethod
-    def _v_title(cls, v: str | None) -> str | None:
-        return _strip_optional(v)
+    def _v_title(cls, v: str) -> str:
+        return _strip_required(v)
 
     @field_validator("content")
     @classmethod
-    def _v_content(cls, v: str | None) -> str | None:
-        return _strip_required(v)
+    def _v_content(cls, v: str) -> str:
+        return v.strip()
 
     @model_validator(mode="after")
     def _v_sondaggio(self) -> "PostCreate":
@@ -102,25 +93,29 @@ class PostCreate(BaseModel):
 class PostUpdate(BaseModel):
     """Partial update; only provided fields change.
 
+    ``title`` may be omitted but never blanked; an empty ``content`` clears the
+    description.
+
     ``max_participants`` is only honored for a sondaggio. Sending it as ``null``
     means "unlimited" (where the category allows it); omitting it leaves the
     capacity unchanged. The post type itself cannot be changed after creation.
     """
 
     title: str | None = Field(default=None, max_length=TITLE_MAX)
-    content: str | None = Field(default=None, min_length=1, max_length=CONTENT_MAX)
+    content: str | None = Field(default=None, max_length=CONTENT_MAX)
     category: PostCategory | None = None
     max_participants: int | None = Field(default=None, ge=1, le=PARTICIPANTS_MAX)
 
     @field_validator("title")
     @classmethod
-    def _v_title(cls, v: str | None) -> str | None:
-        return _strip_optional(v)
+    def _v_title(cls, v: str | None) -> str:
+        # Runs only when the field is sent, so an explicit null is rejected too.
+        return _strip_required(v)
 
     @field_validator("content")
     @classmethod
     def _v_content(cls, v: str | None) -> str | None:
-        return _strip_required(v)
+        return None if v is None else v.strip()
 
 
 class PostAuthor(UserPublic):

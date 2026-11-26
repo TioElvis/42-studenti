@@ -77,10 +77,16 @@ export function PostCard({
           </div>
         </header>
 
-        {post.title && <h3 className="mb-1 font-display text-base font-bold">{post.title}</h3>}
-        <p className="mb-4 line-clamp-5 whitespace-pre-wrap break-words text-sm leading-relaxed">
-          <Linkify>{post.content}</Linkify>
-        </p>
+        {post.title && (
+          <h3 className={`font-display text-base font-bold ${post.content ? "mb-1" : "mb-4"}`}>
+            {post.title}
+          </h3>
+        )}
+        {post.content && (
+          <p className="mb-4 line-clamp-5 whitespace-pre-wrap break-words text-sm leading-relaxed">
+            <Linkify>{post.content}</Linkify>
+          </p>
+        )}
 
         <footer className="flex flex-wrap items-center gap-2">
           <LikeButton

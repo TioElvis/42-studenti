@@ -35,7 +35,7 @@ async def test_followers_and_daje_rankings(client, users):
     assert (await client.post(f"/users/{alice.login}/follow")).status_code in (200, 201, 204)
     # alice posts; bob likes it (counts), alice likes her own (must not count).
     await _as(client, alice)
-    pid = (await client.post("/posts", json={"content": "ciao", "category": "studio"})).json()["id"]
+    pid = (await client.post("/posts", json={"title": "Titolo", "content": "ciao", "category": "studio"})).json()["id"]
     await client.post(f"/posts/{pid}/like")  # own like: ignored
     await _as(client, bob)
     await client.post(f"/posts/{pid}/like")
