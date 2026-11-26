@@ -121,7 +121,7 @@ export function PostCard({
                   e.stopPropagation();
                   onDelete(post);
                 }}
-                className="inline-flex items-center gap-1 border border-[var(--primary)] bg-[var(--surface)] px-2 py-1 font-mono text-xs text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--primary-fg)]"
+                className="inline-flex items-center gap-1 border border-[var(--primary)] bg-[var(--surface)] px-2 py-1 font-mono text-xs text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--primary-fg)] rounded-[var(--radius-pill)]"
               >
                 <Trash2 className="h-3.5 w-3.5" /> {t("common.delete")}
               </button>
