@@ -102,6 +102,7 @@ pnpm dev                      # http://localhost:3000
 |----------|-------------|
 | `NEXT_PUBLIC_API_URL` | Backend URL. Leave blank to use port 9000 on the same host (useful on a LAN) |
 | `NEXT_PUBLIC_STAFF_EMAIL` | Recipient of the Staff contact form |
+| `NEXT_PUBLIC_SITE_URL` | Public frontend URL, used for the sitemap and link previews. Set it before the production build |
 
 ## Tests and checks
 

@@ -6,13 +6,27 @@ import { I18nProvider } from "@/providers/i18n-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { RealtimeProvider } from "@/providers/realtime";
 import { AppFrame } from "@/components/app-frame";
+import { SITE_URL } from "@/lib/site";
+
+const TITLE = "42 Studenti — Il portale degli studenti di 42 Roma";
+const DESCRIPTION =
+  "Il portale degli studenti di 42 Roma: La Bacheca, Eventi e Club. Codice, peer learning e 'na birra dopo er push.";
 
 export const metadata: Metadata = {
-  title: "42 Studenti",
-  description:
-    "Il portale degli studenti di 42 Roma: La Bacheca, Eventi e Club. Codice, peer learning e 'na birra dopo er push.",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
   applicationName: "42 Studenti",
-  robots: { index: false, follow: false },
+  keywords: ["42 Studenti", "42 Roma", "studenti 42 Roma", "eventi 42 Roma", "peer learning"],
+  openGraph: {
+    type: "website",
+    locale: "it_IT",
+    siteName: "42 Studenti",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [{ url: "/rome-pixel.png", width: 1983, height: 793, alt: "Veduta pixel-art di Roma" }],
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {
