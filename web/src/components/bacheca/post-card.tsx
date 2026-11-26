@@ -9,7 +9,6 @@ import { Linkify } from "@/components/ui/linkify";
 import { LikeButton } from "./like-button";
 import { SondaggioBox } from "./sondaggio-box";
 import { relativeTime } from "@/lib/time";
-import { useTheme } from "@/providers/theme-provider";
 import { useI18n } from "@/providers/i18n-provider";
 import type { LikeState, PollOption, Post, RsvpState } from "@/lib/types";
 
@@ -34,9 +33,7 @@ export function PostCard({
   onPoll: (post: Post, options: PollOption[]) => void;
   onOpenAttendees: (post: Post) => void;
 }) {
-  const { theme } = useTheme();
   const { t, lang } = useI18n();
-  const hacker = theme === "hacker";
   const isSondaggio = post.post_type === "sondaggio";
 
   return (
@@ -63,7 +60,7 @@ export function PostCard({
                 onClick={(e) => e.stopPropagation()}
                 className="font-mono text-sm font-bold hover:underline"
               >
-                {hacker ? `@${post.author.login}` : post.author.login}
+                {post.author.login}
               </Link>
               <div className="font-mono text-[11px] text-[var(--text-muted)]">
                 {relativeTime(post.created_at, lang)}
@@ -73,10 +70,10 @@ export function PostCard({
           <div className="flex flex-wrap items-center justify-end gap-1.5">
             {isSondaggio && (
               <span className="cat-badge cat-cerco_team" title={t("post.sondaggioTitle")}>
-                {hacker ? `[${t("post.sondaggioBadge").toUpperCase()}]` : t("post.sondaggioBadge")}
+                {t("post.sondaggioBadge")}
               </span>
             )}
-            <CategoryBadge category={post.category} terminal={hacker} />
+            <CategoryBadge category={post.category} />
           </div>
         </header>
 

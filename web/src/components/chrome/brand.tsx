@@ -9,14 +9,8 @@ export function Brand() {
   const hacker = theme === "hacker";
   const classicModern = theme === "classic-modern";
   const hackerModern = theme === "hacker-modern";
-  const green = hacker || hackerModern; // hacker family uses the green "42_" mark
+  const green = hacker || hackerModern; // hacker family uses a green mark
   const badge = classicModern || hackerModern; // modern rounded logo badge
-
-  const subtitle = hacker
-    ? "SPQR // HACKER_ROMAN_PALETTE"
-    : hackerModern
-      ? "SPQR // Cluster Roma · 41.90411° N, 12.549614° E"
-      : t("brand.subtitle");
 
   return (
     <div className="flex items-center gap-3.5">
@@ -51,13 +45,13 @@ export function Brand() {
               : undefined,
         }}
       >
-        {green ? "42_" : "42"}
+        42
       </div>
       <div>
         <span className="font-[family-name:var(--font-ui)] text-sm font-bold tracking-wide">
-          {hacker ? "STUDENTI.EXE" : "STUDENTI"}
+          STUDENTI
         </span>
-        <div className="font-mono text-xs text-[var(--text-muted)]">{subtitle}</div>
+        <div className="font-mono text-xs text-[var(--text-muted)]">{t("brand.subtitle")}</div>
       </div>
     </div>
   );

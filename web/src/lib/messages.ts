@@ -1,6 +1,6 @@
 /** Bilingual UI strings (Italian/romanesco + English). Looked up by dot-path
- * via the i18n provider's `t()`; `{var}` tokens are interpolated. Terminal/code
- * flavor (shell prompts, "SPQR", coordinates, pseudo file names) is left as-is. */
+ * via the i18n provider's `t()`; `{var}` tokens are interpolated. Code
+ * flavor ("SPQR", pseudo file names) is left as-is. */
 
 export type Lang = "it" | "en";
 

@@ -14,7 +14,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Linkify } from "@/components/ui/linkify";
 import { relativeTime } from "@/lib/time";
 import { api } from "@/lib/api";
-import { useTheme } from "@/providers/theme-provider";
 import { useRealtime } from "@/providers/realtime";
 import { useAuth } from "@/providers/auth-provider";
 import { useI18n } from "@/providers/i18n-provider";
@@ -41,10 +40,8 @@ export function PostDetailModal({
   onPatch: (postId: number, patch: PostPatch) => void;
   onOpenAttendees: (postId: number) => void;
 }) {
-  const { theme } = useTheme();
   const { user } = useAuth();
   const { t, lang } = useI18n();
-  const hacker = theme === "hacker";
   const [detail, setDetail] = React.useState<PostDetail | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -231,7 +228,7 @@ export function PostDetailModal({
                   </div>
                 </div>
               </div>
-              <CategoryBadge category={detail.category} terminal={hacker} />
+              <CategoryBadge category={detail.category} />
             </header>
 
             {detail.title && <h3 className="font-display text-lg font-bold">{detail.title}</h3>}

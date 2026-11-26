@@ -29,6 +29,7 @@ is in `assets/` (`classic.html`, `hacker.html`,
 - Merge classes with `cn()` (`src/lib/utils.ts`); variants in CVA.
 
 ## Copy
+- Texts are identical in every theme: themes change visuals only.
 - UI is **100% Italian with Roman slang (romanesco)**. Keep strings in
   `src/lib/messages.ts` when shared; no English UI text.
 - Tone: friendly, informal, short. Do not invent new slang that reads as a

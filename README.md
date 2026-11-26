@@ -140,8 +140,9 @@ Archivio uploads and all deletions are limited to `GITHUB_SPECIAL_USERS`.
 ### Themes
 
 `classic`, `hacker`, `classic-modern` and `hacker-modern` share the same layout and
-CSS token names; only the values change, in `web/src/app/globals.css`. The theme
-and language are chosen in the settings window.
+CSS token names; only the values change, in `web/src/app/globals.css`. Themes only
+change the visuals: the texts are the same in all of them. The theme and language
+are chosen in the settings window.
 
 ## Development notes
 
