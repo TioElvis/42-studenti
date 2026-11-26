@@ -277,7 +277,7 @@ body {
   background-size: 100% 100%, var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
   background-repeat: no-repeat, repeat, repeat;
   background-attachment: fixed, scroll, scroll;
-  min-height: 100vh;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
 }
 

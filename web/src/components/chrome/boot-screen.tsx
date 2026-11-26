@@ -6,7 +6,7 @@ import { useI18n } from "@/providers/i18n-provider";
 export function BootScreen() {
   const { t } = useI18n();
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-6 text-center">
+    <div className="fixed inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
       <div className="font-display text-4xl font-bold" style={{ color: "var(--primary)" }}>
         42
       </div>
